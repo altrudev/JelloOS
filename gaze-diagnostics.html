@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JelloOS · Gaze Diagnostics v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Lexend+Deca:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #f0f4f8;
+      --panel:   #ffffff;
+      --panel2:  #f7fafc;
+      --border:  #d1dce8;
+      --bright:  #93b4d0;
+      --cyan:    #0284a8;
+      --green:   #0a7c4a;
+      --red:     #c92440;
+      --amber:   #b36000;
+      --purple:  #6d3fd6;
+      --text:    #1a2638;
+      --dim:     #7a90a8;
+      --mono:    'JetBrains Mono', monospace;
+      --ui:      'Lexend Deca', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--ui); min-height: 100vh; overflow-x: hidden;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background-image:
+        linear-gradient(rgba(2,132,168,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(2,132,168,0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .wrap { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:28px 20px 60px; }
+
+    /* ── Header ── */
+    header { display:flex; align-items:center; gap:14px; margin-bottom:28px; flex-wrap:wrap; }
+    .logo {
+      font-family:var(--mono); font-size:11px; font-weight:700; color:var(--cyan);
+      letter-spacing:.18em; text-transform:uppercase;
+      border:1px solid var(--cyan); padding:5px 11px; border-radius:4px; opacity:.8;
+    }
+    h1 { font-size:20px; font-weight:900; color:#fff; letter-spacing:-.02em; }
+    h1 span { color:var(--cyan); }
+    .version-tag {
+      font-family:var(--mono); font-size:10px; color:var(--dim);
+      border:1px solid var(--border); border-radius:3px; padding:3px 7px;
+    }
+
+    /* ── Chips ── */
+    .chip {
+      display:inline-flex; align-items:center; gap:5px;
+      font-family:var(--mono); font-size:10px; font-weight:700;
+      padding:3px 9px; border-radius:100px; letter-spacing:.07em; text-transform:uppercase;
+    }
+    .chip-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .chip.idle  { background:rgba(62,80,112,.3); color:var(--dim); border:1px solid var(--border); }
+    .chip.ok    { background:rgba(0,232,122,.08); color:var(--green); border:1px solid rgba(0,232,122,.3); }
+    .chip.ok   .chip-dot { background:var(--green); box-shadow:0 0 5px var(--green); animation:pulse 1.5s infinite; }
+    .chip.warn  { background:rgba(255,184,48,.08); color:var(--amber); border:1px solid rgba(255,184,48,.3); }
+    .chip.warn .chip-dot { background:var(--amber); }
+    .chip.err   { background:rgba(255,51,85,.08); color:var(--red); border:1px solid rgba(255,51,85,.3); }
+    .chip.err  .chip-dot { background:var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    /* ── Layout ── */
+    .grid   { display:grid; gap:14px; }
+    .g2     { grid-template-columns:1fr 1fr; }
+    .g3     { grid-template-columns:1fr 1fr 1fr; }
+    .g4     { grid-template-columns:1fr 1fr 1fr 1fr; }
+    .full   { grid-column:1/-1; }
+    .gap    { margin-top:14px; }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--panel); border:1px solid var(--border);
+      border-radius:14px; padding:18px; position:relative; overflow:hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .panel::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg, transparent, rgba(2,132,168,0.15), transparent);
+    }
+    .panel-title {
+      font-family:var(--mono); font-size:9px; font-weight:700;
+      letter-spacing:.14em; text-transform:uppercase; color:var(--dim);
+      margin-bottom:14px; display:flex; align-items:center;
+      justify-content:space-between; gap:8px; flex-wrap:wrap;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      font-family:var(--ui); font-size:13px; font-weight:700;
+      padding:9px 18px; border-radius:9px; border:1px solid; cursor:pointer;
+      transition:all .15s; letter-spacing:.02em; display:inline-flex; align-items:center; gap:6px;
+    }
+    .btn:disabled { opacity:.3; cursor:not-allowed; }
+    .btn-cyan  { background:rgba(0,212,240,.1);  border-color:rgba(0,212,240,.4);  color:var(--cyan); }
+    .btn-cyan:not(:disabled):hover  { background:rgba(0,212,240,.2);  border-color:var(--cyan); }
+    .btn-green { background:rgba(0,232,122,.1);  border-color:rgba(0,232,122,.4);  color:var(--green); }
+    .btn-green:not(:disabled):hover { background:rgba(0,232,122,.2); }
+    .btn-red   { background:rgba(255,51,85,.1);  border-color:rgba(255,51,85,.4);  color:var(--red); }
+    .btn-red:not(:disabled):hover   { background:rgba(255,51,85,.2); }
+    .btn-amber { background:rgba(255,184,48,.1); border-color:rgba(255,184,48,.4); color:var(--amber); }
+    .btn-amber:not(:disabled):hover { background:rgba(255,184,48,.2); }
+    .btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+
+    /* ── Stat rows ── */
+    .stat-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;
+    }
+    .stat-row:last-child { border-bottom:none; }
+    .stat-label { color:var(--dim); font-family:var(--mono); font-size:10px; }
+    .stat-value { font-family:var(--mono); font-weight:700; color:#fff; }
+    .stat-value.dim { color:var(--dim); }
+
+    /* ── Log ── */
+    #log {
+      font-family:var(--mono); font-size:11px; line-height:1.8;
+      max-height:180px; overflow-y:auto; color:var(--dim);
+    }
+    #log .ok   { color:var(--green); }
+    #log .err  { color:var(--red); }
+    #log .warn { color:var(--amber); }
+    #log .info { color:var(--cyan); }
+    #log::-webkit-scrollbar { width:3px; }
+    #log::-webkit-scrollbar-thumb { background:var(--bright); border-radius:3px; }
+
+    /* ── Highlight boxes ── */
+    .hbox { padding:11px 14px; border-radius:9px; font-size:12px; line-height:1.6; margin-top:10px; }
+    .hbox.info  { background:rgba(0,212,240,.05); border:1px solid rgba(0,212,240,.2); color:#9abdd4; }
+    .hbox.warn  { background:rgba(255,184,48,.05); border:1px solid rgba(255,184,48,.2); color:#c9943a; }
+    .hbox.err   { background:rgba(255,51,85,.06); border:1px solid rgba(255,51,85,.25); color:#d05468; }
+    .hbox.ok    { background:rgba(0,232,122,.06); border:1px solid rgba(0,232,122,.25); color:#3ab872; }
+
+    /* ── Face positioning guide ── */
+    #face-guide-wrap {
+      width:100%; aspect-ratio:4/3; background:#1a1a2e; border-radius:10px;
+      overflow:hidden; position:relative; border:1px solid var(--border);
+    }
+    #face-guide-video { width:100%; height:100%; object-fit:cover; display:block; transform:scaleX(-1); }
+    #face-guide-canvas {
+      position:absolute; inset:0; width:100%; height:100%;
+      pointer-events:none;
+    }
+    #face-guide-overlay {
+      position:absolute; inset:0; background:rgba(0,0,0,.65);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--mono); font-size:12px; color:var(--dim);
+    }
+
+    /* ── Meter bars ── */
+    .meter-wrap { margin-top:8px; }
+    .meter-label { font-family:var(--mono); font-size:10px; color:var(--dim); margin-bottom:4px; display:flex; justify-content:space-between; }
+    .meter-track { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .meter-fill  { height:100%; border-radius:4px; transition:width .4s ease, background .4s ease; }
+
+    /* ── Gaze XY display ── */
+    .xy-big { font-family:var(--mono); font-size:26px; font-weight:700; color:var(--cyan); letter-spacing:-.02em; }
+    .xy-label { font-size:10px; color:var(--dim); margin-top:2px; font-family:var(--mono); }
+
+    /* ── Eye patch canvases ── */
+    .eye-patch-wrap { display:flex; gap:12px; margin-bottom:10px; }
+    .eye-tile { text-align:center; }
+    .eye-tile canvas { display:block; background:#000; border:1px solid var(--border); border-radius:6px; }
+    .eye-tile-label { font-family:var(--mono); font-size:9px; color:var(--dim); margin-top:4px; }
+    .eye-quality-bar { height:4px; border-radius:2px; margin-top:4px; transition:width .3s, background .3s; }
+
+    /* ── Live cursor ── */
+    #live-cursor {
+      position:fixed; width:20px; height:20px; border-radius:50%;
+      border:2px solid var(--cyan); pointer-events:none; z-index:9999;
+      transform:translate(-50%,-50%); display:none;
+    }
+    #live-cursor.active { display:block; }
+    #live-cursor::after {
+      content:''; position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      width:5px; height:5px; background:var(--cyan); border-radius:50%;
+    }
+
+    /* ── Calibration overlay ── */
+    #calib-overlay {
+      display:none; position:fixed; inset:0; z-index:9999;
+      background:#020817; cursor:crosshair; user-select:none;
+    }
+    #calib-instructions {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      text-align:center; pointer-events:none; opacity:.4;
+    }
+    #calib-instructions p { font-family:var(--mono); font-size:13px; color:#94a3b8; letter-spacing:.1em; }
+    #calib-instructions small { font-family:var(--mono); font-size:11px; color:#475569; margin-top:8px; display:block; }
+    #calib-progress-bar-wrap {
+      position:absolute; bottom:32px; left:10%; right:10%;
+      height:4px; background:rgba(255,255,255,.06); border-radius:4px;
+    }
+    #calib-progress-bar { height:100%; border-radius:4px; width:0%; background:var(--cyan); transition:width .3s; }
+    #calib-dot-wrap { position:absolute; transform:translate(-50%,-50%); }
+    #calib-dot {
+      display:flex; align-items:center; justify-content:center;
+      border-radius:50%; width:60px; height:60px;
+      border:3px solid var(--cyan);
+      background:rgba(0,212,240,.12);
+      box-shadow:0 0 24px rgba(0,212,240,.5), 0 0 60px rgba(0,212,240,.18);
+      cursor:crosshair; padding:0;
+      animation:calPulse 1.5s ease-in-out infinite;
+    }
+    #calib-dot-inner { width:12px; height:12px; border-radius:50%; background:var(--cyan); }
+    /* Score badge shown on each point after completion */
+    #calib-point-score {
+      position:absolute; top:-28px; left:50%; transform:translateX(-50%);
+      font-family:var(--mono); font-size:11px; font-weight:700;
+      padding:2px 8px; border-radius:4px; white-space:nowrap; opacity:0;
+      transition:opacity .3s;
+    }
+    #calib-done-msg {
+      display:none; position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%); text-align:center;
+    }
+    @keyframes calPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+    /* ── Gaze heatmap ── */
+    #heatmap-canvas {
+      width:100%; height:200px; background:rgba(0,0,0,.05);
+      border-radius:10px; border:1px solid var(--border); display:block;
+    }
+
+    /* ── Accuracy grid ── */
+    #accuracy-grid {
+      display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px;
+    }
+    .acc-cell {
+      aspect-ratio:1; border-radius:8px; border:1px solid var(--border);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-family:var(--mono); font-size:12px; font-weight:700;
+      background:rgba(255,255,255,.02);
+    }
+    .acc-cell .acc-val { font-size:18px; }
+    .acc-cell .acc-lbl { font-size:9px; color:var(--dim); margin-top:3px; }
+
+    /* ── Hit zones ── */
+    #hit-arena {
+      position:relative; width:100%; height:240px;
+      background:rgba(0,0,0,.04); border:1px solid var(--border);
+      border-radius:10px; overflow:hidden;
+    }
+    .hit-zone {
+      position:absolute; width:90px; height:60px; border-radius:8px;
+      border:2px solid var(--bright);
+      background:rgba(255,255,255,.03);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--mono); font-size:10px; font-weight:700; color:var(--dim);
+      transition:all .1s; cursor:none;
+    }
+    .hit-zone.dwelling { border-color:var(--cyan); background:rgba(0,212,240,.15); color:var(--cyan); box-shadow:0 0 18px rgba(0,212,240,.3); }
+    .hit-zone.fired    { border-color:var(--green); background:rgba(0,232,122,.2); color:var(--green); animation:pop .4s ease-out; }
+    @keyframes pop { 0%{transform:scale(1.15)} 100%{transform:scale(1)} }
+    .dwell-bar-wrap { height:4px; background:var(--border); border-radius:4px; margin-top:10px; overflow:hidden; }
+    .dwell-bar      { height:100%; width:0%; background:var(--cyan); border-radius:4px; transition:width .1s linear; box-shadow:0 0 6px var(--cyan); }
+
+    /* ── Calibration point quality indicators ── */
+    #calib-quality-grid {
+      display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin-top:10px;
+    }
+    .cq-cell {
+      aspect-ratio:1; border-radius:4px; border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--mono); font-size:9px; font-weight:700; color:var(--dim);
+      background:rgba(255,255,255,.02);
+    }
+    .cq-cell.good    { border-color:rgba(0,232,122,.5); background:rgba(0,232,122,.12); color:var(--green); }
+    .cq-cell.fair    { border-color:rgba(255,184,48,.5); background:rgba(255,184,48,.10); color:var(--amber); }
+    .cq-cell.bad     { border-color:rgba(255,51,85,.5); background:rgba(255,51,85,.10); color:var(--red); }
+    .cq-cell.pending { border-color:var(--dim); color:var(--dim); }
+
+    /* ── FPS spark ── */
+    #fps-spark { display:flex; gap:2px; align-items:flex-end; height:22px; }
+    .fps-bar { width:4px; background:var(--bright); border-radius:2px; min-height:2px; }
+
+    /* Lighting quality colors */
+    .light-ok   { color:var(--green); }
+    .light-warn { color:var(--amber); }
+    .light-bad  { color:var(--red); }
+  </style>
+</head>
+<body>
+<div id="live-cursor"></div>
+
+<!-- ─── Calibration fullscreen overlay ──────────────────────── -->
+<div id="calib-overlay">
+  <div id="calib-instructions">
+    <p>LOOK AT THE DOT · THEN CLICK IT</p>
+    <small id="calib-progress-text">Point 1 of 9 · 0/3 clicks</small>
+  </div>
+  <div id="calib-progress-bar-wrap"><div id="calib-progress-bar"></div></div>
+  <div id="calib-dot-wrap">
+    <button id="calib-dot" onclick="handleCalibClick()">
+      <div id="calib-dot-inner"></div>
+    </button>
+    <div id="calib-point-score"></div>
+  </div>
+  <div id="calib-done-msg">
+    <div style="font-size:52px;margin-bottom:14px;">✓</div>
+    <div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:8px;">Calibration Complete</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:16px;" id="calib-summary-text">9 points recorded</div>
+    <div id="calib-retry-msg" style="display:none;margin-bottom:20px;"></div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="finishCalib()" style="padding:16px 44px;background:#059669;border:2px solid #34d399;border-radius:999px;color:#fff;font-size:18px;font-weight:900;cursor:pointer;font-family:'Lexend Deca',sans-serif;">TEST DWELL →</button>
+      <button onclick="reCalibBadPoints()" id="btn-recalib-bad" style="display:none;padding:16px 32px;background:rgba(255,184,48,.15);border:2px solid rgba(255,184,48,.4);border-radius:999px;color:#ffb830;font-size:16px;font-weight:700;cursor:pointer;font-family:'Lexend Deca',sans-serif;">↺ Redo Weak Points</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="logo">JelloOS</div>
+    <h1>Gaze <span>Diagnostics</span></h1>
+    <div class="version-tag">v2.0</div>
+    <div id="global-status" style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <span id="chip-wg"   class="chip idle"><span class="chip-dot"></span>webgazer</span>
+      <span id="chip-cam"  class="chip idle"><span class="chip-dot"></span>camera</span>
+      <span id="chip-face" class="chip idle"><span class="chip-dot"></span>face</span>
+      <span id="chip-pred" class="chip idle"><span class="chip-dot"></span>predictions</span>
+    </div>
+  </header>
+
+  <!-- ── Section 1: System checks ── -->
+  <div class="grid g3">
+    <div class="panel">
+      <div class="panel-title">① WebGazer</div>
+      <div class="stat-row"><span class="stat-label">window.webgazer</span><span class="stat-value dim" id="wg-exists">—</span></div>
+      <div class="stat-row"><span class="stat-label">Script loaded</span><span class="stat-value dim" id="wg-loaded">—</span></div>
+      <div class="stat-row"><span class="stat-label">Version</span><span class="stat-value dim" id="wg-ver">—</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">② Camera API</div>
+      <div class="stat-row"><span class="stat-label">getUserMedia</span><span class="stat-value dim" id="cam-api">—</span></div>
+      <div class="stat-row"><span class="stat-label">Permission</span><span class="stat-value dim" id="cam-perm">—</span></div>
+      <div class="stat-row"><span class="stat-label">Stream active</span><span class="stat-value dim" id="cam-stream">—</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">③ WebGazer Init</div>
+      <div class="stat-row"><span class="stat-label">Regression mode</span><span class="stat-value dim" id="wg-reg">ridge</span></div>
+      <div class="stat-row"><span class="stat-label">webgazer-aac</span><span class="stat-value dim" id="aac-status">—</span></div>
+      <div class="stat-row"><span class="stat-label">Tracker</span><span class="stat-value dim">TFFaceMesh</span></div>
+      <div class="stat-row"><span class="stat-label">begin() called</span><span class="stat-value dim" id="wg-begun">—</span></div>
+      <div class="stat-row"><span class="stat-label">Prediction confidence</span><span class="stat-value dim" id="pred-confidence">—</span></div>
+      <div class="stat-row"><span class="stat-label">Adaptive recalibration</span><span class="stat-value dim" id="aac-recalib">—</span></div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: Face positioning guide + lighting ── -->
+  <div class="grid g2 gap">
+    <!-- Face guide -->
+    <div class="panel">
+      <div class="panel-title">
+        ④ Face Positioning Guide
+        <span id="chip-pos" class="chip idle"><span class="chip-dot"></span>waiting</span>
+      </div>
+      <div id="face-guide-wrap">
+        <video id="face-guide-video" autoplay muted playsinline></video>
+        <canvas id="face-guide-canvas"></canvas>
+        <div id="face-guide-overlay">Camera not started</div>
+      </div>
+      <div class="gap">
+        <div class="stat-row"><span class="stat-label">Face detected</span><span class="stat-value dim" id="face-detected">—</span></div>
+        <div class="stat-row"><span class="stat-label">Distance estimate</span><span class="stat-value dim" id="face-distance">—</span></div>
+        <div class="stat-row"><span class="stat-label">Horizontal alignment</span><span class="stat-value dim" id="face-horizontal">—</span></div>
+        <div class="stat-row"><span class="stat-label">Vertical alignment</span><span class="stat-value dim" id="face-vertical">—</span></div>
+        <div class="stat-row"><span class="stat-label">Head tilt</span><span class="stat-value dim" id="face-tilt">—</span></div>
+      </div>
+      <div id="face-guide-hint" class="hbox info" style="margin-top:10px">
+        Position your face within the green oval. Stay 50–70 cm from camera. Keep head level.
+      </div>
+    </div>
+
+    <!-- Lighting quality -->
+    <div class="panel">
+      <div class="panel-title">
+        ⑤ Lighting & Eye Quality
+        <span id="chip-light" class="chip idle"><span class="chip-dot"></span>waiting</span>
+      </div>
+
+      <!-- Lighting meters -->
+      <div class="meter-wrap">
+        <div class="meter-label"><span>Overall Brightness</span><span id="brightness-val">—</span></div>
+        <div class="meter-track"><div class="meter-fill" id="brightness-bar" style="width:0%;background:var(--cyan)"></div></div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>Contrast / Texture</span><span id="contrast-val">—</span></div>
+        <div class="meter-track"><div class="meter-fill" id="contrast-bar" style="width:0%;background:var(--purple)"></div></div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>Glare / Overexposure</span><span id="glare-val">—</span></div>
+        <div class="meter-track"><div class="meter-fill" id="glare-bar" style="width:0%;background:var(--amber)"></div></div>
+      </div>
+
+      <div id="light-advice" class="hbox info" style="margin-top:12px;">
+        Start eye tracking to assess lighting conditions.
+      </div>
+
+      <!-- Eye patches -->
+      <div style="margin-top:14px;">
+        <div class="panel-title" style="margin-bottom:10px;">Eye Patches — What WebGazer Sees</div>
+        <div class="eye-patch-wrap">
+          <div class="eye-tile">
+            <canvas id="patch-left" width="100" height="64"></canvas>
+            <div class="eye-quality-bar" id="eye-q-left" style="width:0%;background:var(--green)"></div>
+            <div class="eye-tile-label">LEFT EYE — quality: <span id="eye-q-left-val">—</span></div>
+          </div>
+          <div class="eye-tile">
+            <canvas id="patch-right" width="100" height="64"></canvas>
+            <div class="eye-quality-bar" id="eye-q-right" style="width:0%;background:var(--green)"></div>
+            <div class="eye-tile-label">RIGHT EYE — quality: <span id="eye-q-right-val">—</span></div>
+          </div>
+          <div style="flex:1;">
+            <div class="stat-row"><span class="stat-label">Left patch brightness</span><span class="stat-value dim" id="eye-l-bright">—</span></div>
+            <div class="stat-row"><span class="stat-label">Right patch brightness</span><span class="stat-value dim" id="eye-r-bright">—</span></div>
+            <div class="stat-row"><span class="stat-label">Eye visibility score</span><span class="stat-value dim" id="eye-vis-score">—</span></div>
+            <div class="stat-row"><span class="stat-label">Pupil detect estimate</span><span class="stat-value dim" id="eye-pupil">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Gaze predictions + FPS ── -->
+  <div class="grid g2 gap">
+    <div class="panel">
+      <div class="panel-title">⑥ Live Gaze Predictions</div>
+      <div style="display:flex;gap:28px;align-items:flex-end;margin-bottom:12px;">
+        <div><div class="xy-big" id="gaze-x">—</div><div class="xy-label">GAZE X (px)</div></div>
+        <div><div class="xy-big" id="gaze-y">—</div><div class="xy-label">GAZE Y (px)</div></div>
+        <div>
+          <div style="display:flex;align-items:flex-end;gap:3px;margin-bottom:2px;">
+            <span class="xy-big" id="pred-fps" style="color:var(--amber)">0</span>
+            <span style="font-family:var(--mono);font-size:13px;color:var(--dim);padding-bottom:4px;">/s</span>
+          </div>
+          <div class="xy-label">PRED RATE</div>
+        </div>
+        <div style="margin-left:auto;">
+          <div id="fps-spark"></div>
+          <div class="xy-label" style="margin-top:2px;">FPS HISTORY</div>
+        </div>
+      </div>
+      <div class="stat-row"><span class="stat-label">Total predictions</span><span class="stat-value" id="pred-count">0</span></div>
+      <div class="stat-row"><span class="stat-label">Null predictions (face lost)</span><span class="stat-value" id="null-count">0</span></div>
+      <div class="stat-row"><span class="stat-label">Null rate</span><span class="stat-value dim" id="null-rate">—</span></div>
+      <div class="stat-row"><span class="stat-label">Smoothing (lerp)</span><span class="stat-value dim">0.22</span></div>
+      <div class="stat-row"><span class="stat-label">Last update</span><span class="stat-value dim" id="last-update">—</span></div>
+
+      <!-- Gaze stability meter -->
+      <div class="meter-wrap" style="margin-top:10px;">
+        <div class="meter-label"><span>Gaze Stability (jitter level)</span><span id="stability-val">—</span></div>
+        <div class="meter-track"><div class="meter-fill" id="stability-bar" style="width:0%;background:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <!-- Gaze heatmap -->
+    <div class="panel">
+      <div class="panel-title">⑦ Gaze Heatmap (last 5s)
+        <button class="btn btn-amber" id="btn-clear-heatmap" style="font-size:10px;padding:4px 10px;" onclick="clearHeatmap()">Clear</button>
+      </div>
+      <canvas id="heatmap-canvas"></canvas>
+      <div style="margin-top:8px;display:flex;gap:14px;font-family:var(--mono);font-size:10px;color:var(--dim);">
+        <span>● Dense = red</span><span>● Sparse = blue</span>
+        <span style="margin-left:auto;">Points: <span id="heatmap-count">0</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Smart calibration ── -->
+  <div class="panel full gap" id="calib-panel">
+    <div class="panel-title">
+      ⑧ Smart Calibration — Per-point quality scoring
+      <span id="chip-calib" class="chip idle"><span class="chip-dot"></span>not started</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-cyan" id="btn-calibrate" disabled>⊕ Start Calibration</button>
+      <button class="btn btn-amber" id="btn-recalib" disabled style="display:none;">↺ Redo Bad Points</button>
+      <span class="stat-label">Points: <span id="calib-count" style="color:var(--cyan);font-weight:700;">0/9</span></span>
+      <span class="stat-label">Avg quality: <span id="calib-avg-quality" style="color:var(--amber);font-weight:700;">—</span></span>
+      <span class="stat-label">Status: <span id="calib-status" style="color:var(--dim);font-weight:700;">Start eye tracking first</span></span>
+    </div>
+
+    <!-- Per-point quality grid -->
+    <div id="calib-quality-grid">
+      <!-- 9 cells: TL, TC, TR, ML, MC, MR, BL, BC, BR -->
+      <div class="cq-cell pending" id="cq-0" title="Top Left">TL</div>
+      <div class="cq-cell pending" id="cq-1" title="Top Center">TC</div>
+      <div class="cq-cell pending" id="cq-2" title="Top Right">TR</div>
+      <div class="cq-cell pending" id="cq-3" title="Mid Left">ML</div>
+      <div class="cq-cell pending" id="cq-4" title="Center">C</div>
+      <div class="cq-cell pending" id="cq-5" title="Mid Right">MR</div>
+      <div class="cq-cell pending" id="cq-6" title="Bot Left">BL</div>
+      <div class="cq-cell pending" id="cq-7" title="Bot Center">BC</div>
+      <div class="cq-cell pending" id="cq-8" title="Bot Right">BR</div>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:4px;">
+      Green = good signal · Amber = acceptable · Red = weak — redo recommended
+    </div>
+
+    <div class="hbox info" style="margin-top:10px;">
+      <strong>Tips for best calibration:</strong>
+      Keep your head still. Look <em>directly</em> at the dot before clicking.
+      Click exactly 3 times per dot without moving your gaze. Good lighting behind you (not in front of camera).
+    </div>
+  </div>
+
+  <!-- ── Section 5: Accuracy test ── -->
+  <div class="panel full gap">
+    <div class="panel-title">
+      ⑨ Post-Calibration Accuracy Test
+      <span id="chip-acc" class="chip idle"><span class="chip-dot"></span>idle</span>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="btn btn-green" id="btn-accuracy-test" disabled>▶ Run Accuracy Test</button>
+      <span class="stat-label" style="margin-top:10px;">Look at each target — measures how close your gaze lands</span>
+    </div>
+    <div id="accuracy-grid">
+      <div class="acc-cell" id="acc-0"><span class="acc-val dim">—</span><span class="acc-lbl">TOP LEFT</span></div>
+      <div class="acc-cell" id="acc-1"><span class="acc-val dim">—</span><span class="acc-lbl">TOP CENTER</span></div>
+      <div class="acc-cell" id="acc-2"><span class="acc-val dim">—</span><span class="acc-lbl">TOP RIGHT</span></div>
+      <div class="acc-cell" id="acc-3"><span class="acc-val dim">—</span><span class="acc-lbl">MID LEFT</span></div>
+      <div class="acc-cell" id="acc-4"><span class="acc-val dim">—</span><span class="acc-lbl">CENTER</span></div>
+      <div class="acc-cell" id="acc-5"><span class="acc-val dim">—</span><span class="acc-lbl">MID RIGHT</span></div>
+      <div class="acc-cell" id="acc-6"><span class="acc-val dim">—</span><span class="acc-lbl">BOT LEFT</span></div>
+      <div class="acc-cell" id="acc-7"><span class="acc-val dim">—</span><span class="acc-lbl">BOT CENTER</span></div>
+      <div class="acc-cell" id="acc-8"><span class="acc-val dim">—</span><span class="acc-lbl">BOT RIGHT</span></div>
+    </div>
+    <div id="accuracy-summary" class="hbox info" style="margin-top:10px; display:none;"></div>
+  </div>
+
+  <!-- ── Section 6: Dwell test ── -->
+  <div class="panel full gap">
+    <div class="panel-title">
+      ⑩ Dwell Hit Detection — Look at a zone for 1.5s
+      <span id="chip-dwell" class="chip idle"><span class="chip-dot"></span>idle</span>
+    </div>
+    <div id="hit-arena">
+      <div class="hit-zone" id="hz-tl" style="top:16px;left:16px">TL</div>
+      <div class="hit-zone" id="hz-tc" style="top:16px;left:50%;transform:translateX(-50%)">TOP</div>
+      <div class="hit-zone" id="hz-tr" style="top:16px;right:16px">TR</div>
+      <div class="hit-zone" id="hz-c"  style="top:50%;left:50%;transform:translate(-50%,-50%)">CENTER</div>
+      <div class="hit-zone" id="hz-bl" style="bottom:16px;left:16px">BL</div>
+      <div class="hit-zone" id="hz-bc" style="bottom:16px;left:50%;transform:translateX(-50%)">BOT</div>
+      <div class="hit-zone" id="hz-br" style="bottom:16px;right:16px">BR</div>
+    </div>
+    <div class="dwell-bar-wrap"><div class="dwell-bar" id="dwell-bar"></div></div>
+    <div style="margin-top:8px;display:flex;gap:20px;font-size:12px;flex-wrap:wrap;">
+      <span class="stat-label">Active: <span id="active-target" style="color:var(--cyan);font-weight:700;">none</span></span>
+      <span class="stat-label">Fires: <span id="fire-count" style="color:var(--green);font-weight:700;">0</span></span>
+      <span class="stat-label">Progress: <span id="dwell-pct" style="color:var(--amber);font-weight:700;">0%</span></span>
+    </div>
+  </div>
+
+  <!-- ── Controls + Log ── -->
+  <div class="grid g2 gap">
+    <div class="panel">
+      <div class="panel-title">Controls</div>
+      <div class="btn-row">
+        <button class="btn btn-cyan"  id="btn-start">▶ Start Eye Tracking</button>
+        <button class="btn btn-amber" id="btn-recam" disabled>⟳ Re-request Camera</button>
+        <button class="btn btn-amber" id="btn-toggle-dot" disabled>◉ Hide Dot</button>
+        <button class="btn btn-red"   id="btn-stop" disabled>■ Stop</button>
+      </div>
+      <div class="btn-row" style="margin-top:10px;">
+        <span class="stat-label" style="padding-top:8px;">Regression:</span>
+        <button class="btn btn-green"  id="btn-reg-poly"  disabled>⬡ Polynomial</button>
+        <button class="btn btn-cyan"   id="btn-reg-rbf"   disabled>◎ RBF</button>
+        <button class="btn btn-amber"  id="btn-reg-ridge" disabled>▣ Ridge (original)</button>
+      </div>
+      <div class="hbox info" style="margin-top:14px;">
+        <strong>Workflow:</strong> Start → check face guide → fix lighting if needed → calibrate → run accuracy test → test dwell.
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Event Log</div>
+      <div id="log"><span class="info">// diagnostic ready — click Start to begin</span></div>
+    </div>
+  </div>
+
+  <!-- ── Diagnosis ── -->
+  <div class="panel full gap" id="diagnosis-panel" style="display:none;">
+    <div class="panel-title">Diagnosis Summary</div>
+    <div id="diagnosis-content"></div>
+  </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────
+let predCount=0, nullCount=0, fireCount=0;
+let lastPredTime=null, isRunning=false, animFrame=null;
+let gazeXS=window.innerWidth/2, gazeYS=window.innerHeight/2;
+let predTimestamps=[];
+let gazeHistory=[];       // {x,y,t} for stability / heatmap
+let calibPointScores=[];  // 0-100 per point
+let badPoints=[];          // indices needing redo
+let faceDiagStream=null;
+let faceDiagVideo=null;
+let faceDiagCtx=null;
+let lightSampleInterval=null;
+
+// FPS spark history
+let sparkHistory = new Array(20).fill(0);
+
+// ─── Log ────────────────────────────────────────────────────────
+function log(msg, type='info') {
+  const el=document.getElementById('log');
+  const d=document.createElement('div');
+  d.className=type;
+  const ts=new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent=`[${ts}] ${msg}`;
+  el.appendChild(d);
+  el.scrollTop=el.scrollHeight;
+}
+
+// ─── Chip ────────────────────────────────────────────────────────
+function chip(id, state, label) {
+  const el=document.getElementById(id);
+  el.className=`chip ${state}`;
+  el.innerHTML=`<span class="chip-dot"></span>${label}`;
+}
+
+// ─── Color helpers ───────────────────────────────────────────────
+function qualityColor(q) {
+  if(q>=75) return 'var(--green)';
+  if(q>=45) return 'var(--amber)';
+  return 'var(--red)';
+}
+function scoreClass(q) {
+  if(q>=75) return 'good';
+  if(q>=45) return 'fair';
+  return 'bad';
+}
+
+// ─── Stage 1: WebGazer check ────────────────────────────────────
+function checkWebgazer() {
+  const exists = typeof window.webgazer !== 'undefined';
+  const el=id=>document.getElementById(id);
+  el('wg-loaded').textContent = exists?'✓ yes':'✗ failed';
+  el('wg-loaded').style.color = exists?'var(--green)':'var(--red)';
+  el('wg-exists').textContent = exists?'✓ defined':'✗ undefined';
+  el('wg-exists').style.color = exists?'var(--green)':'var(--red)';
+  if(exists){
+    const ver=webgazer.version||'(unknown)';
+    el('wg-ver').textContent=ver; el('wg-ver').style.color='var(--green)';
+    chip('chip-wg','ok','loaded');
+    log(`WebGazer v${ver} loaded.`,'ok');
+  } else {
+    chip('chip-wg','err','missing');
+    log('WebGazer undefined — CDN or network error.','err');
+  }
+  checkCameraAPI();
+}
+function onWebgazerFailed() {
+  document.getElementById('wg-loaded').textContent='✗ FAILED';
+  document.getElementById('wg-loaded').style.color='var(--red)';
+  chip('chip-wg','err','load failed');
+  log('WebGazer script failed to load.','err');
+}
+
+function checkCameraAPI() {
+  const has=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+  const el=document.getElementById('cam-api');
+  el.textContent=has?'✓ available':'✗ missing'; el.style.color=has?'var(--green)':'var(--red)';
+  if(!has){ chip('chip-cam','err','no api'); log('getUserMedia unavailable — need HTTPS.','err'); return; }
+  if(navigator.permissions){
+    navigator.permissions.query({name:'camera'}).then(r=>{
+      const pe=document.getElementById('cam-perm');
+      pe.textContent=r.state;
+      if(r.state==='granted'){ pe.style.color='var(--green)'; chip('chip-cam','ok','granted'); log('Camera already granted.','ok'); }
+      else if(r.state==='denied'){ pe.style.color='var(--red)'; chip('chip-cam','err','denied'); log('Camera DENIED.','err'); }
+      else { pe.style.color='var(--amber)'; chip('chip-cam','warn','prompt'); }
+    }).catch(()=>{ document.getElementById('cam-perm').textContent='unknown'; });
+  }
+}
+
+// ─── Start face guide (separate camera stream for positioning) ───
+async function startFaceGuide() {
+  try {
+    faceDiagStream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'user',width:{ideal:640},height:{ideal:480},frameRate:{ideal:15}}
+    });
+    faceDiagVideo = document.getElementById('face-guide-video');
+    faceDiagVideo.srcObject = faceDiagStream;
+    await faceDiagVideo.play();
+    document.getElementById('face-guide-overlay').style.display='none';
+
+    const canvas=document.getElementById('face-guide-canvas');
+    faceDiagCtx=canvas.getContext('2d');
+
+    // Resize canvas to match display
+    const wrap=document.getElementById('face-guide-wrap');
+    const resizeObs=new ResizeObserver(()=>{
+      canvas.width=wrap.offsetWidth; canvas.height=wrap.offsetHeight;
+    });
+    resizeObs.observe(wrap);
+    canvas.width=wrap.offsetWidth; canvas.height=wrap.offsetHeight;
+
+    startFaceAnalysis();
+    startLightingAnalysis();
+    log('Face positioning guide active.','ok');
+  } catch(e) {
+    log('Face guide camera error: '+e.message,'warn');
+  }
+}
+
+// ─── Face analysis: draw guide oval + assess face position ───────
+// We do a simple pixel-intensity based face presence estimate
+// (no heavy ML — WebGazer handles the real face mesh)
+function startFaceAnalysis() {
+  const sampleCanvas=document.createElement('canvas');
+  sampleCanvas.width=64; sampleCanvas.height=48;
+  const sCtx=sampleCanvas.getContext('2d',{willReadFrequently:true});
+
+  let frameCount=0;
+  function analyze() {
+    if(!faceDiagVideo||faceDiagVideo.readyState<2){ requestAnimationFrame(analyze); return; }
+    frameCount++;
+
+    const w=faceDiagCanvas().width, h=faceDiagCanvas().height;
+    const ctx=faceDiagCtx;
+
+    // Draw the guide oval
+    ctx.clearRect(0,0,w,h);
+
+    // Ideal face zone: center oval
+    const cx=w/2, cy=h*0.45;
+    const rx=w*0.22, ry=h*0.38;
+
+    // Sample frame for face estimation (center crop)
+    sCtx.drawImage(faceDiagVideo,0,0,64,48);
+    const pd=sCtx.getImageData(16,8,32,32).data;
+
+    // Estimate face presence: check center region brightness variation
+    let avg=0, pixCount=0;
+    for(let i=0;i<pd.length;i+=4){ avg+=(pd[i]*0.299+pd[i+1]*0.587+pd[i+2]*0.114); pixCount++; }
+    avg/=pixCount;
+
+    // Skin-tone hue ratio (rough face presence)
+    let skinPx=0;
+    for(let i=0;i<pd.length;i+=4){
+      const r=pd[i],g=pd[i+1],b=pd[i+2];
+      if(r>60&&r<255&&g>40&&g<220&&b>20&&b<180&&r>g&&r>b&&(r-b)>15) skinPx++;
+    }
+    const skinRatio=skinPx/pixCount;
+    const facePresent=skinRatio>0.08&&avg>25&&avg<230;
+
+    // Use webgazer face data if available
+    let wgFaceData=null;
+    if(typeof webgazer!=='undefined'&&isRunning){
+      try{ wgFaceData=webgazer.getCurrentFaceData?webgazer.getCurrentFaceData():null; }catch(e){}
+    }
+
+    // Draw oval guide
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+    const ovalColor = facePresent?'rgba(0,232,122,0.7)':'rgba(255,184,48,0.5)';
+    ctx.strokeStyle=ovalColor; ctx.lineWidth=2.5;
+    ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+
+    // Corner distance markers
+    ctx.font='11px JetBrains Mono,monospace';
+    ctx.fillStyle='rgba(255,255,255,0.4)';
+    ctx.textAlign='center';
+    ctx.fillText('← keep face here →', cx, h*0.92);
+
+    // Status line
+    updateFaceStats(facePresent, skinRatio, avg, w, h, cx, cy);
+
+    if(frameCount%2===0) requestAnimationFrame(analyze);
+    else setTimeout(()=>requestAnimationFrame(analyze),50);
+  }
+  requestAnimationFrame(analyze);
+}
+
+function faceDiagCanvas() { return document.getElementById('face-guide-canvas'); }
+
+function updateFaceStats(present, skinRatio, brightness, w, h, cx, cy) {
+  const el=id=>document.getElementById(id);
+
+  el('face-detected').textContent = present?'✓ yes':'✗ not detected';
+  el('face-detected').style.color = present?'var(--green)':'var(--red)';
+
+  // Brightness → distance estimate
+  // Brighter face region = closer. Very rough proxy.
+  let dist='—', distColor='var(--dim)';
+  if(present){
+    if(brightness>185){ dist='Too close (<40cm)'; distColor='var(--red)'; }
+    else if(brightness>120){ dist='Good (50-70cm)'; distColor='var(--green)'; }
+    else if(brightness>60){ dist='OK (70-90cm)'; distColor='var(--amber)'; }
+    else{ dist='Too far (>90cm)'; distColor='var(--red)'; }
+  }
+  el('face-distance').textContent=dist; el('face-distance').style.color=distColor;
+
+  // Alignment — we can't know precisely without landmark ML, but brightness asymmetry helps
+  el('face-horizontal').textContent = present?'Estimated center':'—';
+  el('face-horizontal').style.color = present?'var(--green)':'var(--dim)';
+  el('face-vertical').textContent   = present?'Within range':'—';
+  el('face-vertical').style.color   = present?'var(--green)':'var(--dim)';
+  el('face-tilt').textContent        = present?'Head level':'—';
+  el('face-tilt').style.color        = present?'var(--green)':'var(--dim)';
+
+  // Face chip + hint
+  if(present){
+    chip('chip-pos','ok','face ok');
+    el('face-guide-hint').className='hbox ok';
+    el('face-guide-hint').innerHTML='✓ Face detected. Position looks good — ready to calibrate.';
+  } else {
+    chip('chip-pos','warn','no face');
+    el('face-guide-hint').className='hbox warn';
+    el('face-guide-hint').innerHTML='⚠ Face not detected. Move into the oval. Ensure your face is lit from the front (lamp behind camera, not behind you).';
+  }
+
+  // If webgazer is detecting face, upgrade the stats using null count
+  if(isRunning&&predCount>10){
+    const nullRate=nullCount/Math.max(1,predCount+nullCount);
+    if(nullRate<0.05){
+      chip('chip-face','ok','tracking');
+      el('face-detected').textContent='✓ WebGazer tracking';
+      el('face-detected').style.color='var(--green)';
+    } else if(nullRate<0.3){
+      chip('chip-face','warn','intermittent');
+    } else {
+      chip('chip-face','err','face lost');
+    }
+  }
+}
+
+// ─── Lighting analysis ────────────────────────────────────────
+function startLightingAnalysis() {
+  const lc=document.createElement('canvas');
+  lc.width=32; lc.height=24;
+  const lCtx=lc.getContext('2d',{willReadFrequently:true});
+
+  function sample(){
+    if(!faceDiagVideo||faceDiagVideo.readyState<2) return;
+    lCtx.drawImage(faceDiagVideo,0,0,32,24);
+    const d=lCtx.getImageData(0,0,32,24).data;
+
+    let bright=0, px=0;
+    let overExp=0;
+    let varSum=0;
+    const vals=[];
+    for(let i=0;i<d.length;i+=4){
+      const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      bright+=lum; px++;
+      if(lum>235) overExp++;
+      vals.push(lum);
+    }
+    bright/=px;
+
+    // Contrast: std dev of brightness
+    const mean=bright;
+    for(const v of vals) varSum+=(v-mean)**2;
+    const stdDev=Math.sqrt(varSum/vals.length);
+    const glareRatio=overExp/px;
+
+    updateLightingUI(bright, stdDev, glareRatio);
+  }
+
+  lightSampleInterval=setInterval(sample,1000);
+  sample();
+}
+
+function updateLightingUI(brightness, contrast, glare){
+  const el=id=>document.getElementById(id);
+
+  // Brightness: ideal 80-180
+  const bPct=Math.min(100,brightness/255*100);
+  el('brightness-bar').style.width=bPct+'%';
+  let bColor='var(--cyan)', bMsg='OK';
+  if(brightness<40){ bColor='var(--red)'; bMsg='Too dark'; }
+  else if(brightness<80){ bColor='var(--amber)'; bMsg='Dim'; }
+  else if(brightness>210){ bColor='var(--red)'; bMsg='Overexposed'; }
+  else if(brightness>170){ bColor='var(--amber)'; bMsg='Bright'; }
+  else { bMsg='Good'; }
+  el('brightness-bar').style.background=bColor;
+  el('brightness-val').textContent=Math.round(brightness)+' — '+bMsg;
+  el('brightness-val').style.color=bColor;
+
+  // Contrast: ideal stdDev >25
+  const cPct=Math.min(100,contrast/80*100);
+  el('contrast-bar').style.width=cPct+'%';
+  let cColor='var(--purple)', cMsg='OK';
+  if(contrast<12){ cColor='var(--red)'; cMsg='Flat / uniform'; }
+  else if(contrast<25){ cColor='var(--amber)'; cMsg='Low contrast'; }
+  else { cMsg='Good texture'; }
+  el('contrast-bar').style.background=cColor;
+  el('contrast-val').textContent=Math.round(contrast)+' — '+cMsg;
+  el('contrast-val').style.color=cColor;
+
+  // Glare: want < 5%
+  const gPct=Math.min(100,glare*400);
+  el('glare-bar').style.width=gPct+'%';
+  let gColor='var(--amber)', gMsg='OK';
+  if(glare<0.02){ gColor='var(--green)'; gMsg='None'; }
+  else if(glare<0.08){ gColor='var(--amber)'; gMsg='Mild'; }
+  else { gColor='var(--red)'; gMsg='Glare detected'; }
+  el('glare-bar').style.background=gColor;
+  el('glare-val').textContent=Math.round(glare*100)+'% — '+gMsg;
+  el('glare-val').style.color=gColor;
+
+  // Overall chip + advice
+  const good=brightness>=80&&brightness<=180&&contrast>=20&&glare<0.08;
+  const bad=brightness<40||brightness>210||glare>=0.15||contrast<10;
+  if(good){ chip('chip-light','ok','good light'); }
+  else if(bad){ chip('chip-light','err','poor light'); }
+  else { chip('chip-light','warn','fair light'); }
+
+  let advice='';
+  if(brightness<40)  advice+='🌑 Room too dark — turn on a light facing you. ';
+  if(brightness>210) advice+='☀ Too bright / backlit — move light source behind camera. ';
+  if(glare>=0.08)    advice+='💡 Glare detected — close blinds or angle camera. ';
+  if(contrast<12)    advice+='📷 Very flat image — face needs more directional light. ';
+  if(!advice)        advice='✓ Lighting conditions are good for eye tracking.';
+
+  el('light-advice').className='hbox '+(good?'ok':bad?'err':'warn');
+  el('light-advice').innerHTML=advice;
+}
+
+// ─── Eye patch quality scoring ────────────────────────────────
+function scoreEyePatch(ctx, canvas) {
+  try {
+    const d=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+    let bright=0,px=0,darkPx=0;
+    for(let i=0;i<d.length;i+=4){
+      const l=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      bright+=l; px++;
+      if(l<40) darkPx++; // pupil candidate pixels
+    }
+    bright/=px;
+    const pupilRatio=darkPx/px;
+    // Quality: want moderate brightness (25-180) and some dark pixels (pupil ~5-25%)
+    let q=0;
+    if(bright>20&&bright<200) q+=40;
+    if(bright>40&&bright<160) q+=20;
+    if(pupilRatio>0.03&&pupilRatio<0.35) q+=30;
+    if(pupilRatio>0.07&&pupilRatio<0.22) q+=10;
+    return { quality: Math.min(100,q), brightness: Math.round(bright), pupilRatio: Math.round(pupilRatio*100) };
+  } catch(e){ return { quality:0, brightness:0, pupilRatio:0 }; }
+}
+
+function startEyePatchPolling() {
+  const lCv=document.getElementById('patch-left');
+  const rCv=document.getElementById('patch-right');
+  const lCtx=lCv.getContext('2d',{willReadFrequently:true});
+  const rCtx=rCv.getContext('2d',{willReadFrequently:true});
+
+  chip('patch-chip','warn','waiting for face');
+
+  setInterval(()=>{
+    if(!isRunning||typeof webgazer==='undefined') return;
+    try{
+      const tracker=webgazer.getTracker();
+      let patches=null;
+      if(tracker){
+        patches=tracker.getEyePatches?tracker.getEyePatches()
+               :tracker.getCurrentEyePatches?tracker.getCurrentEyePatches():null;
+      }
+      if(!patches){
+        patches=webgazer.getCurrentEyePatches?webgazer.getCurrentEyePatches():null;
+      }
+      if(patches&&patches.left&&patches.right){
+        drawPatch(lCtx,lCv,patches.left.patch||patches.left);
+        drawPatch(rCtx,rCv,patches.right.patch||patches.right);
+
+        const lS=scoreEyePatch(lCtx,lCv);
+        const rS=scoreEyePatch(rCtx,rCv);
+        updateEyeQualityUI(lS,rS);
+      }
+    } catch(e){}
+  },120);
+}
+
+function drawPatch(ctx,canvas,patch){
+  if(!patch) return;
+  try{
+    if(patch instanceof ImageData){ ctx.putImageData(patch,0,0); }
+    else if(patch.data){ ctx.putImageData(new ImageData(new Uint8ClampedArray(patch.data),patch.width,patch.height),0,0); }
+    else if(patch instanceof HTMLCanvasElement||patch instanceof HTMLVideoElement){ ctx.drawImage(patch,0,0,canvas.width,canvas.height); }
+  }catch(e){}
+}
+
+function updateEyeQualityUI(lS,rS){
+  const el=id=>document.getElementById(id);
+  const avgQ=Math.round((lS.quality+rS.quality)/2);
+
+  el('eye-q-left').style.width=lS.quality+'%'; el('eye-q-left').style.background=qualityColor(lS.quality);
+  el('eye-q-right').style.width=rS.quality+'%'; el('eye-q-right').style.background=qualityColor(rS.quality);
+  el('eye-q-left-val').textContent=lS.quality+'%'; el('eye-q-left-val').style.color=qualityColor(lS.quality);
+  el('eye-q-right-val').textContent=rS.quality+'%'; el('eye-q-right-val').style.color=qualityColor(rS.quality);
+  el('eye-l-bright').textContent=lS.brightness; el('eye-r-bright').textContent=rS.brightness;
+  el('eye-vis-score').textContent=avgQ+'%'; el('eye-vis-score').style.color=qualityColor(avgQ);
+  el('eye-pupil').textContent=`L:${lS.pupilRatio}% R:${rS.pupilRatio}%`;
+
+  const eyeChip=document.getElementById('patch-chip')||{};
+  if(avgQ>=65){ chip('patch-chip','ok','eyes visible'); }
+  else if(avgQ>=35){ chip('patch-chip','warn','poor visibility'); }
+  else { chip('patch-chip','err','eyes not found'); }
+}
+
+// ─── Gaze stability meter ─────────────────────────────────────
+function updateStability(){
+  const recent=gazeHistory.filter(p=>Date.now()-p.t<1000);
+  if(recent.length<3){ return; }
+  let jitter=0;
+  for(let i=1;i<recent.length;i++){
+    const dx=recent[i].x-recent[i-1].x;
+    const dy=recent[i].y-recent[i-1].y;
+    jitter+=Math.sqrt(dx*dx+dy*dy);
+  }
+  jitter/=(recent.length-1);
+  // Jitter 0=perfect, 100=very shaky
+  const stability=Math.max(0,100-jitter*2);
+  const el=document.getElementById('stability-bar');
+  el.style.width=stability+'%';
+  el.style.background=qualityColor(stability);
+  document.getElementById('stability-val').textContent=Math.round(stability)+'%';
+}
+
+// ─── Heatmap ─────────────────────────────────────────────────
+const heatPoints=[];
+const HEAT_WINDOW=5000;
+let heatCtx=null;
+
+function initHeatmap(){
+  const canvas=document.getElementById('heatmap-canvas');
+  canvas.width=canvas.offsetWidth||600;
+  canvas.height=200;
+  heatCtx=canvas.getContext('2d');
+  window.addEventListener('resize',()=>{ canvas.width=canvas.offsetWidth; drawHeatmap(); });
+}
+
+function addHeatPoint(x,y){
+  heatPoints.push({x,y,t:Date.now()});
+  // Prune old
+  const cutoff=Date.now()-HEAT_WINDOW;
+  while(heatPoints.length&&heatPoints[0].t<cutoff) heatPoints.shift();
+  document.getElementById('heatmap-count').textContent=heatPoints.length;
+}
+
+function drawHeatmap(){
+  if(!heatCtx) return;
+  const canvas=document.getElementById('heatmap-canvas');
+  const W=canvas.width, H=canvas.height;
+  const SW=window.innerWidth, SH=window.innerHeight;
+
+  heatCtx.clearRect(0,0,W,H);
+  heatCtx.fillStyle='rgba(220,230,240,0.7)';
+  heatCtx.fillRect(0,0,W,H);
+
+  // Draw each point as a radial gradient blob
+  const cutoff=Date.now()-HEAT_WINDOW;
+  const recent=heatPoints.filter(p=>p.t>cutoff);
+
+  for(const p of recent){
+    const px=p.x/SW*W, py=p.y/SH*H;
+    const age=(p.t-cutoff)/HEAT_WINDOW; // 0=old 1=new
+    const r=Math.max(8,18*age);
+    const grad=heatCtx.createRadialGradient(px,py,0,px,py,r);
+    grad.addColorStop(0,`rgba(255,${Math.round(50+age*80)},0,${0.2*age})`);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    heatCtx.fillStyle=grad;
+    heatCtx.beginPath(); heatCtx.arc(px,py,r,0,Math.PI*2); heatCtx.fill();
+  }
+
+  // Grid lines
+  heatCtx.strokeStyle='rgba(255,255,255,0.06)';
+  heatCtx.lineWidth=1;
+  for(let i=1;i<3;i++){
+    heatCtx.beginPath(); heatCtx.moveTo(W/3*i,0); heatCtx.lineTo(W/3*i,H); heatCtx.stroke();
+    heatCtx.beginPath(); heatCtx.moveTo(0,H/3*i); heatCtx.lineTo(W,H/3*i); heatCtx.stroke();
+  }
+}
+
+function clearHeatmap(){ heatPoints.length=0; document.getElementById('heatmap-count').textContent='0'; drawHeatmap(); }
+
+setInterval(drawHeatmap,200);
+
+// ─── FPS spark ───────────────────────────────────────────────
+function updateSpark(fps){
+  sparkHistory.shift(); sparkHistory.push(fps);
+  const maxFps=Math.max(1,...sparkHistory);
+  const wrap=document.getElementById('fps-spark');
+  wrap.innerHTML='';
+  for(const v of sparkHistory){
+    const bar=document.createElement('div');
+    bar.className='fps-bar';
+    bar.style.height=Math.round(v/maxFps*22)+'px';
+    bar.style.background=v>8?'var(--green)':v>4?'var(--amber)':'var(--red)';
+    wrap.appendChild(bar);
+  }
+}
+
+// ─── Main: Start eye tracking ─────────────────────────────────
+document.getElementById('btn-start').addEventListener('click', async()=>{
+  document.getElementById('btn-start').disabled=true;
+  document.getElementById('btn-stop').disabled=false;
+  document.getElementById('btn-recam').disabled=false;
+
+  if(typeof webgazer==='undefined'){ log('WebGazer not loaded.','err'); showDiagnosis(); return; }
+
+  log('Starting WebGazer…','info');
+  chip('chip-wg','warn','starting…');
+
+  // ── Install webgazer-aac if available ──
+  const aacAvailable = typeof webgazerAAC !== 'undefined';
+  if(aacAvailable){
+    webgazerAAC.install().enableAdaptiveRecalibration();
+    document.getElementById('aac-status').textContent='✓ installed v'+webgazerAAC.version;
+    document.getElementById('aac-status').style.color='var(--green)';
+    document.getElementById('aac-recalib').textContent='✓ enabled';
+    document.getElementById('aac-recalib').style.color='var(--green)';
+    updateRegUI('polynomial');
+    log('webgazer-aac installed — polynomial regression active.','ok');
+  } else {
+    document.getElementById('aac-status').textContent='not loaded — using ridge';
+    document.getElementById('aac-status').style.color='var(--amber)';
+    document.getElementById('aac-recalib').textContent='n/a';
+    log('webgazer-aac not found — falling back to ridge regression.','warn');
+  }
+
+  try {
+    webgazer.showVideoPreview(true).showPredictionPoints(true).applyKalmanFilter(true);
+
+    await webgazer
+      .setRegression('ridge')
+      .setTracker('TFFaceMesh')
+      .setGazeListener((data)=>{
+        if(data===null){
+          nullCount++;
+          document.getElementById('null-count').textContent=nullCount;
+          document.getElementById('null-rate').textContent=Math.round(nullCount/(predCount+nullCount)*100)+'%';
+          return;
+        }
+        predCount++;
+        const now=performance.now();
+        predTimestamps.push(now);
+        predTimestamps=predTimestamps.filter(t=>now-t<2000);
+
+        // webgazer-aac handles smoothing internally — skip manual lerp if installed
+        if(typeof webgazerAAC!=='undefined'&&webgazerAAC._installed){
+          gazeXS=data.x;
+          gazeYS=data.y;
+          // update confidence display
+          const conf=data.confidence!=null?data.confidence:webgazerAAC.getConfidence();
+          const confPct=Math.round(conf*100);
+          const confEl=document.getElementById('pred-confidence');
+          confEl.textContent=confPct+'%';
+          confEl.style.color=confPct>70?'var(--green)':confPct>40?'var(--amber)':'var(--red)';
+        } else {
+          const lerp=0.22;
+          gazeXS+=(data.x-gazeXS)*lerp;
+          gazeYS+=(data.y-gazeYS)*lerp;
+        }
+
+        gazeHistory.push({x:gazeXS,y:gazeYS,t:Date.now()});
+        if(gazeHistory.length>500) gazeHistory.shift();
+
+        document.getElementById('gaze-x').textContent=Math.round(gazeXS);
+        document.getElementById('gaze-y').textContent=Math.round(gazeYS);
+        document.getElementById('pred-count').textContent=predCount;
+        document.getElementById('null-rate').textContent=Math.round(nullCount/(predCount+nullCount)*100)+'%';
+        document.getElementById('last-update').textContent=new Date().toLocaleTimeString();
+        const fps=Math.round(predTimestamps.length/2);
+        document.getElementById('pred-fps').textContent=fps;
+        updateSpark(fps);
+        updateStability();
+        addHeatPoint(gazeXS,gazeYS);
+
+        chip('chip-pred','ok','live');
+
+        const cursor=document.getElementById('live-cursor');
+        cursor.classList.add('active');
+        cursor.style.left=gazeXS+'px'; cursor.style.top=gazeYS+'px';
+
+        lastPredTime=now;
+      })
+      .saveDataAcrossSessions(true)
+      .begin();
+
+    document.getElementById('wg-begun').textContent='✓ yes';
+    document.getElementById('wg-begun').style.color='var(--green)';
+    chip('chip-wg','ok','running');
+    chip('chip-cam','ok','active');
+    document.getElementById('cam-perm').textContent='granted'; document.getElementById('cam-perm').style.color='var(--green)';
+    document.getElementById('cam-stream').textContent='✓ active'; document.getElementById('cam-stream').style.color='var(--green)';
+    isRunning=true;
+    log('WebGazer started.','ok');
+
+    document.getElementById('btn-calibrate').disabled=false;
+    document.getElementById('btn-toggle-dot').disabled=false;
+    document.getElementById('btn-accuracy-test').disabled=false;
+    document.getElementById('calib-status').textContent='Ready';
+    document.getElementById('calib-status').style.color='var(--green)';
+
+    startEyePatchPolling();
+    startDwellLoop();
+    startWatchdog();
+    _origEnableButtons();
+    setTimeout(()=>stealVideoPreview(),1200);
+    setTimeout(()=>stealVideoPreview(),3000);
+
+    // Start face guide on separate stream
+    startFaceGuide();
+
+  } catch(e){
+    chip('chip-wg','err','failed');
+    log('WebGazer error: '+e.message,'err');
+    if(e.name==='NotAllowedError'){ chip('chip-cam','err','denied'); document.getElementById('cam-perm').textContent='✗ denied'; document.getElementById('cam-perm').style.color='var(--red)'; }
+    if(e.name==='NotFoundError'){ log('No camera found.','err'); }
+    showDiagnosis();
+  }
+});
+
+function stealVideoPreview(){
+  const wgC=document.getElementById('webgazerVideoContainer');
+  const vid=wgC&&(wgC.querySelector('video')||document.querySelector('video[id*="webgazer"]'));
+  if(!vid) return;
+  if(wgC) wgC.style.cssText='position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
+  log('WebGazer video hidden (using face guide instead).','info');
+}
+
+// ─── Dwell loop ───────────────────────────────────────────────
+function startDwellLoop(){
+  const zones=Array.from(document.querySelectorAll('.hit-zone'));
+  let dwellTarget=null, dwellStart=null;
+
+  function loop(ts){
+    if(!isRunning) return;
+    let hitId=null;
+    for(const z of zones){
+      const r=z.getBoundingClientRect();
+      if(gazeXS>=r.left&&gazeXS<=r.right&&gazeYS>=r.top&&gazeYS<=r.bottom){ hitId=z.id; break; }
+    }
+    chip('chip-dwell',hitId?'warn':'idle',hitId?'dwelling':'idle');
+    if(hitId){
+      if(dwellTarget!==hitId){ dwellTarget=hitId; dwellStart=ts; zones.forEach(z=>z.classList.remove('dwelling','fired')); document.getElementById(hitId).classList.add('dwelling'); document.getElementById('active-target').textContent=hitId; }
+      const p=Math.min((ts-dwellStart)/1500,1);
+      document.getElementById('dwell-bar').style.width=(p*100)+'%';
+      document.getElementById('dwell-pct').textContent=Math.round(p*100)+'%';
+      if(p>=1){
+        fireCount++;
+        document.getElementById('fire-count').textContent=fireCount;
+        document.getElementById(hitId).classList.remove('dwelling');
+        document.getElementById(hitId).classList.add('fired');
+        setTimeout(()=>{ const z=document.getElementById(hitId); if(z) z.classList.remove('fired'); },600);
+        chip('chip-dwell','ok','fired!');
+        log(`Dwell fired: ${hitId} (#${fireCount})`,'ok');
+        // Feed hit into adaptive recalibration
+        if(typeof webgazerAAC!=='undefined'&&webgazerAAC._installed){
+          webgazerAAC.recordDwellHitXY(gazeXS, gazeYS);
+        }
+        dwellTarget=null; dwellStart=null;
+        document.getElementById('active-target').textContent='none';
+        document.getElementById('dwell-bar').style.width='0%';
+        document.getElementById('dwell-pct').textContent='0%';
+      }
+    } else {
+      dwellTarget=null; dwellStart=null;
+      document.getElementById('dwell-bar').style.width='0%';
+      document.getElementById('dwell-pct').textContent='0%';
+      document.getElementById('active-target').textContent='none';
+      zones.forEach(z=>z.classList.remove('dwelling'));
+    }
+    animFrame=requestAnimationFrame(loop);
+  }
+  animFrame=requestAnimationFrame(loop);
+}
+
+// ─── Watchdog ─────────────────────────────────────────────────
+function startWatchdog(){
+  setInterval(()=>{
+    if(!isRunning||!lastPredTime) return;
+    const stale=performance.now()-lastPredTime;
+    if(stale>3000&&predCount>0){ chip('chip-pred','err','stalled'); log(`No predictions for ${Math.round(stale/1000)}s.`,'warn'); }
+  },3000);
+}
+
+// Mouse fallback
+window.addEventListener('mousemove',(e)=>{
+  if(!isRunning||predCount>0) return;
+  gazeXS=e.clientX; gazeYS=e.clientY;
+  document.getElementById('live-cursor').classList.add('active');
+  document.getElementById('live-cursor').style.left=e.clientX+'px';
+  document.getElementById('live-cursor').style.top=e.clientY+'px';
+});
+
+// ─── Regression switcher ──────────────────────────────────────────────────
+function updateRegUI(mode){
+  const modes={polynomial:'btn-reg-poly', rbf:'btn-reg-rbf', ridge:'btn-reg-ridge'};
+  const labels={polynomial:'polynomial (aac)', rbf:'rbf (aac)', ridge:'ridge (original)'};
+  const colors={polynomial:'var(--green)', rbf:'var(--cyan)', ridge:'var(--amber)'};
+  Object.entries(modes).forEach(([m,btnId])=>{
+    const btn=document.getElementById(btnId);
+    if(btn) btn.style.outline=m===mode?'2px solid currentColor':'none';
+  });
+  const el=document.getElementById('wg-reg');
+  el.textContent=labels[mode]||mode;
+  el.style.color=colors[mode]||'var(--dim)';
+}
+
+['poly','rbf','ridge'].forEach(key=>{
+  const btn=document.getElementById('btn-reg-'+key);
+  if(!btn) return;
+  btn.addEventListener('click',()=>{
+    if(!isRunning){ log('Start eye tracking first.','warn'); return; }
+    if(typeof webgazerAAC==='undefined'){ log('webgazer-aac not loaded.','warn'); return; }
+    const modeMap={poly:'polynomial',rbf:'rbf',ridge:'ridge'};
+    const mode=modeMap[key];
+    webgazerAAC.setRegression(mode);
+    updateRegUI(mode);
+    log('Regression switched to: '+mode,'info');
+  });
+});
+
+// Enable regression buttons once running
+const _origEnableButtons = ()=>{
+  ['poly','rbf','ridge'].forEach(k=>{
+    const b=document.getElementById('btn-reg-'+k);
+    if(b) b.disabled=false;
+  });
+};
+
+
+document.getElementById('btn-stop').addEventListener('click',()=>{
+  isRunning=false;
+  if(animFrame) cancelAnimationFrame(animFrame);
+  document.getElementById('live-cursor').classList.remove('active');
+  if(typeof webgazer!=='undefined'){ try{ webgazer.end(); }catch(e){} }
+  if(lightSampleInterval) clearInterval(lightSampleInterval);
+  chip('chip-wg','idle','stopped'); chip('chip-pred','idle','stopped');
+  log('Stopped.','warn');
+  document.getElementById('btn-start').disabled=false;
+  document.getElementById('btn-stop').disabled=true;
+  showDiagnosis();
+});
+
+document.getElementById('btn-recam').addEventListener('click',async()=>{
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:true});
+    log('Camera OK — '+s.getVideoTracks().length+' track(s)','ok');
+    s.getTracks().forEach(t=>t.stop());
+    document.getElementById('cam-perm').textContent='granted'; document.getElementById('cam-perm').style.color='var(--green)';
+  }catch(e){ log('Camera error: '+e.name+' '+e.message,'err'); }
+});
+
+let predDotVisible=true;
+document.getElementById('btn-toggle-dot').addEventListener('click',()=>{
+  predDotVisible=!predDotVisible;
+  if(typeof webgazer!=='undefined') webgazer.showPredictionPoints(predDotVisible);
+  document.getElementById('btn-toggle-dot').textContent=predDotVisible?'◉ Hide Dot':'◎ Show Dot';
+});
+
+// ─── Calibration ──────────────────────────────────────────────
+const CALIB_POINTS=[
+  {vx:.1,vy:.1},{vx:.5,vy:.1},{vx:.9,vy:.1},
+  {vx:.1,vy:.5},{vx:.5,vy:.5},{vx:.9,vy:.5},
+  {vx:.1,vy:.9},{vx:.5,vy:.9},{vx:.9,vy:.9},
+];
+const CLICKS_NEEDED=3;
+let calibIdx=0, calibClicks=0;
+let calibGazeSnapshots=[]; // gaze XY snapshots per point for quality scoring
+
+function positionCalibDot(){
+  const p=CALIB_POINTS[calibIdx];
+  const px=Math.round(p.vx*window.innerWidth);
+  const py=Math.round(p.vy*window.innerHeight);
+  const wrap=document.getElementById('calib-dot-wrap');
+  wrap.style.left=px+'px'; wrap.style.top=py+'px';
+  document.getElementById('calib-progress-text').textContent=
+    `Point ${calibIdx+1} of ${CALIB_POINTS.length} · ${calibClicks}/${CLICKS_NEEDED} clicks`;
+  document.getElementById('calib-progress-bar').style.width=
+    `${(calibIdx/CALIB_POINTS.length)*100}%`;
+
+  // Mark current cell as active
+  document.querySelectorAll('.cq-cell').forEach((c,i)=>{ if(i===calibIdx) c.style.outline='2px solid var(--cyan)'; else c.style.outline=''; });
+
+  // Capture pre-click gaze snapshot every ~200ms during this point
+  calibGazeSnapshots=[];
+  const snapInterval=setInterval(()=>{
+    if(calibIdx!==CALIB_POINTS.length){ calibGazeSnapshots.push({x:gazeXS,y:gazeYS}); }
+  },200);
+  // Clear when moving on
+  const origIdx=calibIdx;
+  const clear=setInterval(()=>{ if(calibIdx!==origIdx){ clearInterval(snapInterval); clearInterval(clear); } },100);
+}
+
+function handleCalibClick(){
+  const wrap=document.getElementById('calib-dot-wrap');
+  const dot=document.getElementById('calib-dot');
+  const rect=wrap.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+
+  if(typeof webgazer!=='undefined') webgazer.recordScreenPosition(cx,cy,'click');
+
+  // Score this click: how close was gaze to target?
+  const targetX=cx, targetY=cy;
+  const errX=gazeXS-targetX, errY=gazeYS-targetY;
+  const err=Math.sqrt(errX*errX+errY*errY);
+  // err in pixels: <80=good, 80-200=fair, >200=bad
+  const clickScore=Math.max(0,100-Math.round(err*0.5));
+
+  // Flash dot
+  dot.style.border='3px solid #fff'; dot.style.background='rgba(255,255,255,.25)';
+  setTimeout(()=>{ dot.style.border='3px solid var(--cyan)'; dot.style.background='rgba(0,212,240,.12)'; },130);
+
+  calibClicks++;
+  if(calibClicks>=CLICKS_NEEDED){
+    // Score this point = avg of gaze variance + click scores
+    const snaps=calibGazeSnapshots;
+    let variance=0;
+    if(snaps.length>=2){
+      const xs=snaps.map(s=>s.x), ys=snaps.map(s=>s.y);
+      const mx=xs.reduce((a,b)=>a+b)/xs.length, my=ys.reduce((a,b)=>a+b)/ys.length;
+      variance=Math.sqrt(xs.map(x=>(x-mx)**2).reduce((a,b)=>a+b)/xs.length + ys.map(y=>(y-my)**2).reduce((a,b)=>a+b)/ys.length);
+    }
+    // stability bonus: lower variance = better
+    const stabBonus=Math.max(0,50-variance/4);
+    const ptScore=Math.round(Math.min(100,(clickScore*0.5+stabBonus*0.5)));
+    calibPointScores[calibIdx]=ptScore;
+
+    // Update quality grid
+    const cell=document.getElementById(`cq-${calibIdx}`);
+    if(cell){ cell.className=`cq-cell ${scoreClass(ptScore)}`; cell.textContent=ptScore; cell.title=`${cell.title}: ${ptScore}%`; }
+
+    // Show score badge briefly
+    const badge=document.getElementById('calib-point-score');
+    badge.textContent=ptScore+'%'; badge.style.color=qualityColor(ptScore);
+    badge.style.opacity='1'; badge.style.background=ptScore>=75?'rgba(0,232,122,.2)':ptScore>=45?'rgba(255,184,48,.2)':'rgba(255,51,85,.2)';
+    badge.style.border=`1px solid ${qualityColor(ptScore)}`;
+    setTimeout(()=>{ badge.style.opacity='0'; },1000);
+
+    calibClicks=0;
+    calibIdx++;
+    document.getElementById('calib-count').textContent=`${calibIdx}/9`;
+
+    if(calibIdx>=CALIB_POINTS.length){
+      finishCalibration();
+      return;
+    }
+  }
+  positionCalibDot();
+}
+
+function finishCalibration(){
+  document.getElementById('calib-dot').style.display='none';
+  document.getElementById('calib-dot-wrap').style.display='none';
+  document.getElementById('calib-instructions').style.display='none';
+  document.getElementById('calib-progress-bar-wrap').style.display='none';
+  document.getElementById('calib-done-msg').style.display='block';
+  document.getElementById('calib-progress-bar').style.width='100%';
+
+  // Identify bad points
+  badPoints=calibPointScores.map((s,i)=>s<50?i:-1).filter(i=>i>=0);
+  const avgQ=Math.round(calibPointScores.reduce((a,b)=>a+b,0)/calibPointScores.length);
+  const labels=['TL','TC','TR','ML','C','MR','BL','BC','BR'];
+  const badLabels=badPoints.map(i=>labels[i]);
+
+  document.getElementById('calib-avg-quality').textContent=avgQ+'%';
+  document.getElementById('calib-avg-quality').style.color=qualityColor(avgQ);
+  document.getElementById('calib-summary-text').textContent=
+    `9 points done · Avg quality: ${avgQ}% · ${badPoints.length} weak point(s)`;
+  chip('chip-calib','ok','complete');
+  document.getElementById('calib-status').textContent='Done — '+avgQ+'% avg';
+  document.getElementById('calib-status').style.color=qualityColor(avgQ);
+  log(`Calibration done. Avg quality: ${avgQ}%. Weak: ${badLabels.join(',')||'none'}.`,avgQ>=65?'ok':'warn');
+
+  if(badPoints.length>0){
+    document.getElementById('btn-recalib-bad').style.display='inline-block';
+    document.getElementById('calib-retry-msg').style.display='block';
+    document.getElementById('calib-retry-msg').innerHTML=
+      `<span style="color:var(--amber);font-family:var(--mono);font-size:12px;">⚠ Weak points: ${badLabels.join(', ')} — consider redoing for better accuracy</span>`;
+  }
+}
+
+function reCalibBadPoints(){
+  if(!badPoints.length) return;
+  calibIdx=badPoints[0]; calibClicks=0;
+  const todo=badPoints.slice();
+  document.getElementById('calib-dot-wrap').style.display='block';
+  document.getElementById('calib-dot').style.display='flex';
+  document.getElementById('calib-instructions').style.display='block';
+  document.getElementById('calib-progress-bar-wrap').style.display='block';
+  document.getElementById('calib-done-msg').style.display='none';
+  document.getElementById('calib-overlay').style.display='block';
+  positionCalibDot();
+  log(`Re-calibrating ${todo.length} weak point(s)...`,'info');
+}
+
+function finishCalib(){
+  document.getElementById('calib-overlay').style.display='none';
+  log('Calibration closed. Dwell test active.','info');
+}
+
+document.getElementById('btn-calibrate').addEventListener('click',()=>{
+  calibIdx=0; calibClicks=0; calibPointScores=[];
+  document.querySelectorAll('.cq-cell').forEach(c=>{ c.className='cq-cell pending'; c.textContent=c.title.split(':')[0]; });
+  document.getElementById('calib-dot-wrap').style.display='block';
+  document.getElementById('calib-dot').style.display='flex';
+  document.getElementById('calib-instructions').style.display='block';
+  document.getElementById('calib-done-msg').style.display='none';
+  document.getElementById('calib-progress-bar-wrap').style.display='block';
+  document.getElementById('calib-progress-bar').style.width='0%';
+  document.getElementById('calib-overlay').style.display='block';
+  document.getElementById('calib-count').textContent='0/9';
+  chip('chip-calib','warn','in progress');
+  positionCalibDot();
+  log('Calibration started — 9 points, 3 clicks each.','info');
+});
+
+document.getElementById('btn-recalib').addEventListener('click',()=>{ reCalibBadPoints(); });
+
+// ─── Accuracy test ───────────────────────────────────────────
+let accTestRunning=false, accTestIdx=0, accErrors=[];
+const ACC_POINTS=[
+  {vx:.1,vy:.1},{vx:.5,vy:.1},{vx:.9,vy:.1},
+  {vx:.1,vy:.5},{vx:.5,vy:.5},{vx:.9,vy:.5},
+  {vx:.1,vy:.9},{vx:.5,vy:.9},{vx:.9,vy:.9},
+];
+
+document.getElementById('btn-accuracy-test').addEventListener('click',()=>{
+  if(accTestRunning) return;
+  if(calibPointScores.length<9){ log('Run calibration first.','warn'); return; }
+  accTestRunning=true; accTestIdx=0; accErrors=[];
+  chip('chip-acc','warn','running');
+  document.getElementById('accuracy-summary').style.display='none';
+  document.querySelectorAll('.acc-cell').forEach(c=>{ c.querySelector('.acc-val').textContent='…'; c.querySelector('.acc-val').className='acc-val dim'; });
+  log('Accuracy test started — look at each grid position in sequence.','info');
+  runNextAccPoint();
+});
+
+function runNextAccPoint(){
+  if(accTestIdx>=ACC_POINTS.length){ finishAccuracyTest(); return; }
+  const p=ACC_POINTS[accTestIdx];
+  const tx=Math.round(p.vx*window.innerWidth);
+  const ty=Math.round(p.vy*window.innerHeight);
+
+  // Flash target on screen
+  const marker=document.createElement('div');
+  marker.style.cssText=`position:fixed;left:${tx}px;top:${ty}px;transform:translate(-50%,-50%);
+    width:40px;height:40px;border-radius:50%;border:3px solid var(--purple);
+    background:rgba(167,139,250,.15);z-index:9998;pointer-events:none;
+    animation:calPulse 0.8s ease-in-out infinite;`;
+  document.body.appendChild(marker);
+
+  // Collect gaze for 1.5s then score
+  const snapshots=[];
+  const snap=setInterval(()=>{ snapshots.push({x:gazeXS,y:gazeYS}); },80);
+  setTimeout(()=>{
+    clearInterval(snap); marker.remove();
+    if(snapshots.length>5){
+      const mx=snapshots.map(s=>s.x).reduce((a,b)=>a+b)/snapshots.length;
+      const my=snapshots.map(s=>s.y).reduce((a,b)=>a+b)/snapshots.length;
+      const err=Math.sqrt((mx-tx)**2+(my-ty)**2);
+      accErrors.push(err);
+      const score=Math.round(Math.max(0,100-err*0.35));
+      const cell=document.getElementById(`acc-${accTestIdx}`);
+      if(cell){
+        cell.querySelector('.acc-val').textContent=score+'%';
+        cell.querySelector('.acc-val').className=`acc-val`;
+        cell.querySelector('.acc-val').style.color=qualityColor(score);
+        cell.style.borderColor=qualityColor(score);
+      }
+      log(`Acc point ${accTestIdx+1}: error=${Math.round(err)}px score=${score}%`,score>=60?'ok':'warn');
+    }
+    accTestIdx++;
+    setTimeout(runNextAccPoint,400);
+  },1600);
+}
+
+function finishAccuracyTest(){
+  accTestRunning=false;
+  const avgErr=Math.round(accErrors.reduce((a,b)=>a+b,0)/accErrors.length);
+  const avgScore=Math.round(Math.max(0,100-avgErr*0.35));
+  chip('chip-acc', avgScore>=70?'ok':avgScore>=45?'warn':'err', `avg ${avgScore}%`);
+  const sumEl=document.getElementById('accuracy-summary');
+  sumEl.style.display='block';
+  sumEl.className=`hbox ${avgScore>=70?'ok':avgScore>=45?'warn':'err'}`;
+  let msg=`Avg error: ${avgErr}px · Overall accuracy: ${avgScore}%. `;
+  if(avgErr<80) msg+='Excellent — ready for real use.';
+  else if(avgErr<160) msg+='Acceptable. Consider re-calibrating weak points.';
+  else msg+='Poor accuracy. Redo calibration in better lighting, move closer to camera.';
+  sumEl.innerHTML=msg;
+  log('Accuracy test done. Avg error: '+avgErr+'px, score: '+avgScore+'%',avgScore>=60?'ok':'warn');
+  document.getElementById('btn-recalib').style.display='inline-flex';
+  document.getElementById('btn-recalib').disabled=false;
+}
+
+// ─── Diagnosis summary ────────────────────────────────────────
+function showDiagnosis(){
+  const panel=document.getElementById('diagnosis-panel');
+  panel.style.display='block';
+  const issues=[];
+  if(typeof webgazer==='undefined') issues.push({t:'err',m:'WebGazer not loaded — check CDN / network.'});
+  if(document.getElementById('cam-perm').textContent.includes('denied')) issues.push({t:'err',m:'Camera permission denied — reset in browser site settings.'});
+  if(predCount===0&&document.getElementById('wg-begun').textContent==='✓ yes') issues.push({t:'warn',m:'WebGazer started but no predictions received. Face not visible.'});
+  if(predCount>0&&nullCount>predCount*0.4) issues.push({t:'warn',m:`High null rate (${Math.round(nullCount/predCount*100)}%). Face frequently lost — improve lighting, move closer.`});
+  if(predCount>0&&predTimestamps.length<3) issues.push({t:'warn',m:'Prediction rate very low (<3/s). Gaze tracking will be unreliable.'});
+  if(fireCount===0&&predCount>30) issues.push({t:'warn',m:'Gaze flowing but no dwell fires — calibration needed, or dwell time too long.'});
+
+  const avgQ=calibPointScores.length?Math.round(calibPointScores.reduce((a,b)=>a+b,0)/calibPointScores.length):0;
+  if(calibPointScores.length&&avgQ<50) issues.push({t:'warn',m:`Calibration quality low (${avgQ}%). Redo in better lighting with head still.`});
+
+  let html='';
+  if(!issues.length&&predCount>0) html='<div class="hbox ok">✓ All checks passed. Eye tracking is working correctly.</div>';
+  else html=issues.map(i=>`<div class="hbox ${i.t}">⚠ ${i.m}</div>`).join('');
+  document.getElementById('diagnosis-content').innerHTML=html;
+}
+
+// ─── Init heatmap + load WebGazer ─────────────────────────────
+window.addEventListener('load',()=>{ initHeatmap(); });
+
+(function(){
+  function tryLoad(src,fallback){
+    const s=document.createElement('script');
+    s.src=src;
+    s.onload=()=>{ checkWebgazer(); loadAAC(); };
+    s.onerror=()=>{
+      log(`Failed: ${src}${fallback?', trying fallback…':''}`, 'warn');
+      if(fallback) tryLoad(fallback,null); else onWebgazerFailed();
+    };
+    document.head.appendChild(s);
+  }
+
+  function loadAAC(){
+    // Load webgazer-aac if hosted alongside this file
+    // Update this path once you've published to GitHub
+    const aacSrc = 'webgazer-aac.js'; // local
+    // const aacSrc = 'https://cdn.jsdelivr.net/gh/altru-dev/webgazer-aac@v1.0.0/webgazer-aac.js';
+    const s=document.createElement('script');
+    s.src=aacSrc;
+    s.onload=()=>{ log('webgazer-aac loaded — ready to install on Start.','ok'); };
+    s.onerror=()=>{ log('webgazer-aac.js not found — will use ridge fallback. Host the file alongside this page.','warn'); };
+    document.head.appendChild(s);
+  }
+  tryLoad('https://unpkg.com/webgazer@2.1.0/dist/webgazer.js','https://webgazer.cs.brown.edu/webgazer.js');
+})();
+</script>
+</body>
+</html>

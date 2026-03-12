@@ -1,0 +1,8 @@
+{
+  "name": "JelloOS",
+  "description": "A sovereign, installation-free communication interface for individuals with motor impairments. Features 'Jello' gaze feedback, dwell-clicking, and AI-powered predictive text.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

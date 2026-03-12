@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="theme-color" content="#020617"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>JelloOS | Command Suite</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/webgazer@2.1.0/dist/webgazer.js"></script>
+
+  <script type="module">
+    import React from 'https://esm.sh/react@18.3.1?dev';
+    import ReactDOM from 'https://esm.sh/react-dom@18.3.1/client?dev';
+    import * as LucideReact from 'https://esm.sh/lucide-react@0.363.0';
+    window.React = React;
+    window.ReactDOM = ReactDOM;
+    window.LucideReact = LucideReact;
+    window.__depsReady = true;
+    document.dispatchEvent(new Event('deps-ready'));
+  </script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>window.process = { env: { API_KEY: '' } };</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* ── Day/Night CSS variables ─────────────────────────────────── */
+    :root {
+      /* Night defaults (override by JS) */
+      --bg-primary:    #050d1a;
+      --bg-secondary:  #0a1628;
+      --bg-card:       rgba(255,255,255,0.05);
+      --bg-card-hover: rgba(255,255,255,0.09);
+      --border-color:  rgba(255,255,255,0.10);
+      --text-primary:  #f0f8ff;
+      --text-secondary:#94a3b8;
+      --text-label:    rgba(255,255,255,0.45);
+      --accent:        #06b6d4;
+      --accent-glow:   rgba(6,182,212,0.35);
+      --accent-btn:    rgba(6,182,212,0.18);
+      --key-bg:        rgba(255,255,255,0.07);
+      --key-border:    rgba(255,255,255,0.08);
+      --output-bg:     rgba(6,182,212,0.06);
+      --output-border: rgba(6,182,212,0.30);
+      --phrase-bg:     rgba(251,191,36,0.12);
+      --phrase-border: rgba(251,191,36,0.30);
+      --phrase-text:   #fde68a;
+      --pred-bg:       rgba(6,182,212,0.10);
+      --pred-border:   rgba(6,182,212,0.25);
+      --pred-text:     #67e8f9;
+      --ctrl-bg:       rgba(255,255,255,0.06);
+      --ctrl-border:   rgba(255,255,255,0.10);
+      --ctrl-text:     #e2e8f0;
+      --ctrl-label:    rgba(255,255,255,0.40);
+    }
+
+    /* Day theme */
+    :root.day {
+      --bg-primary:    #e8f4f8;
+      --bg-secondary:  #d0e8f0;
+      --bg-card:       rgba(255,255,255,0.75);
+      --bg-card-hover: rgba(255,255,255,0.90);
+      --border-color:  rgba(0,80,120,0.15);
+      --text-primary:  #0c2340;
+      --text-secondary:#1e4d6b;
+      --text-label:    rgba(0,60,100,0.50);
+      --accent:        #0284c7;
+      --accent-glow:   rgba(2,132,199,0.30);
+      --accent-btn:    rgba(2,132,199,0.15);
+      --key-bg:        rgba(255,255,255,0.80);
+      --key-border:    rgba(0,80,130,0.15);
+      --output-bg:     rgba(255,255,255,0.85);
+      --output-border: rgba(2,132,199,0.40);
+      --phrase-bg:     rgba(217,119,6,0.12);
+      --phrase-border: rgba(217,119,6,0.35);
+      --phrase-text:   #92400e;
+      --pred-bg:       rgba(2,132,199,0.10);
+      --pred-border:   rgba(2,132,199,0.30);
+      --pred-text:     #0369a1;
+      --ctrl-bg:       rgba(255,255,255,0.78);
+      --ctrl-border:   rgba(0,80,130,0.18);
+      --ctrl-text:     #0c2340;
+      --ctrl-label:    rgba(0,60,100,0.45);
+    }
+
+    /* Dusk/golden-hour (17:00–19:30) */
+    :root.dusk {
+      --bg-primary:    #1a0e05;
+      --bg-secondary:  #251308;
+      --bg-card:       rgba(255,200,100,0.06);
+      --bg-card-hover: rgba(255,200,100,0.10);
+      --border-color:  rgba(255,160,50,0.12);
+      --text-primary:  #fff3e0;
+      --text-secondary:#ffcc80;
+      --text-label:    rgba(255,200,100,0.45);
+      --accent:        #f59e0b;
+      --accent-glow:   rgba(245,158,11,0.35);
+      --accent-btn:    rgba(245,158,11,0.18);
+      --key-bg:        rgba(255,200,80,0.07);
+      --key-border:    rgba(255,160,50,0.10);
+      --output-bg:     rgba(245,158,11,0.07);
+      --output-border: rgba(245,158,11,0.35);
+      --phrase-bg:     rgba(245,158,11,0.14);
+      --phrase-border: rgba(245,158,11,0.35);
+      --phrase-text:   #fde68a;
+      --pred-bg:       rgba(245,158,11,0.10);
+      --pred-border:   rgba(245,158,11,0.25);
+      --pred-text:     #fcd34d;
+      --ctrl-bg:       rgba(255,200,80,0.07);
+      --ctrl-border:   rgba(255,160,50,0.12);
+      --ctrl-text:     #fff3e0;
+      --ctrl-label:    rgba(255,200,100,0.45);
+    }
+
+    /* Dim theme — low ambient light, warm dark */
+    :root.dim {
+      --bg-primary:    #0d1117;
+      --bg-secondary:  #161b22;
+      --bg-card:       rgba(255,255,255,0.06);
+      --bg-card-hover: rgba(255,255,255,0.10);
+      --border-color:  rgba(255,255,255,0.10);
+      --text-primary:  #e6edf3;
+      --text-secondary:#8b949e;
+      --text-label:    rgba(255,255,255,0.38);
+      --accent:        #58a6ff;
+      --accent-glow:   rgba(88,166,255,0.32);
+      --accent-btn:    rgba(88,166,255,0.16);
+      --key-bg:        rgba(255,255,255,0.07);
+      --key-border:    rgba(255,255,255,0.09);
+      --output-bg:     rgba(88,166,255,0.06);
+      --output-border: rgba(88,166,255,0.28);
+      --phrase-bg:     rgba(210,153,34,0.13);
+      --phrase-border: rgba(210,153,34,0.32);
+      --phrase-text:   #e3b341;
+      --pred-bg:       rgba(88,166,255,0.09);
+      --pred-border:   rgba(88,166,255,0.22);
+      --pred-text:     #79c0ff;
+      --ctrl-bg:       rgba(255,255,255,0.06);
+      --ctrl-border:   rgba(255,255,255,0.10);
+      --ctrl-text:     #e6edf3;
+      --ctrl-label:    rgba(255,255,255,0.38);
+    }
+
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Lexend Deca', sans-serif;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transition: background 1.2s ease, color 0.8s ease;
+    }
+
+    #root { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+    /* Hide WebGazer built-in UI */
+    #webgazerVideoContainer,
+    #webgazerFaceOverlay,
+    #webgazerGazeDot { display: none !important; }
+
+    /* ── Cards / glass ───────────────────────────────────── */
+    .jcard {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: 18px;
+      transition: background 0.8s ease, border-color 0.8s ease;
+    }
+
+    /* ── Jello gaze-active glow ──────────────────────────── */
+    .jello-active {
+      box-shadow: 0 0 28px var(--accent-glow) !important;
+      border-color: var(--accent) !important;
+      transform: scale(1.025);
+      z-index: 2;
+    }
+
+    /* ── Gaze cursor ─────────────────────────────────────── */
+    .gaze-cursor {
+      pointer-events: none;
+      position: fixed;
+      z-index: 9990;
+      transform: translate(-50%,-50%);
+    }
+
+    /* ── Ring light overlay ──────────────────────────────── */
+    /* Thin border ONLY — never covers buttons or fields */
+    #ring-light {
+      display: none; position: fixed; inset: 0; z-index: 9980;
+      pointer-events: none;
+      border: 5px solid rgba(255,255,255,0.92);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.4),
+        0 0 22px 4px rgba(255,255,255,0.18);
+    }
+    #ring-light.active { display: block; }
+
+    /* ── Eye preview ─────────────────────────────────────── */
+    #eye-preview {
+      display: none; position: fixed;
+      bottom: env(safe-area-inset-bottom, 12px); right: 12px;
+      z-index: 9985; width: 160px; height: 56px;
+      border-radius: 10px; border: 2px solid rgba(6,182,212,0.5);
+      background: #000; overflow: hidden;
+    }
+    #eye-preview.active { display: block; }
+    #eye-preview canvas { width: 100%; height: 100%; display: block; }
+    #eye-preview-label {
+      position: absolute; bottom: 3px; left: 6px;
+      font-size: 9px; font-family: 'Space Mono', monospace;
+      color: rgba(6,182,212,0.7); letter-spacing: 0.08em;
+      pointer-events: none;
+    }
+
+    /* ── Theme time indicator dot ───────────────────────── */
+    #theme-dot {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-family: 'Space Mono', monospace;
+      color: var(--text-label); letter-spacing: 0.06em;
+      transition: color 0.8s;
+    }
+    #theme-dot .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent-glow);
+      transition: background 0.8s, box-shadow 0.8s;
+    }
+
+    /* ── Scrollbar hide ──────────────────────────────────── */
+    .no-scroll::-webkit-scrollbar { display: none; }
+    .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ── Keyboard key ──────────────────────────────────────── */
+    .jkey {
+      background: var(--key-bg);
+      border: 1.5px solid var(--key-border);
+      color: var(--text-primary);
+      border-radius: 14px;
+      font-family: 'Lexend Deca', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.1s, color 0.8s;
+      flex: 1;
+    }
+    .jkey:active { transform: scale(0.94); }
+
+    /* ── Output field ─────────────────────────────────────── */
+    .output-field {
+      background: var(--output-bg);
+      border: 2px solid var(--output-border);
+      border-radius: 18px;
+      transition: background 0.8s, border-color 0.8s;
+    }
+
+    /* ── Phrase buttons ───────────────────────────────────── */
+    .phrase-btn {
+      background: var(--phrase-bg);
+      border: 2px solid var(--phrase-border);
+      color: var(--phrase-text);
+      border-radius: 12px;
+      font-family: 'Lexend Deca', sans-serif;
+      font-weight: 700;
+      transition: background 0.8s, border-color 0.8s, color 0.8s;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      white-space: nowrap;
+    }
+
+    /* ── Prediction buttons ────────────────────────────────── */
+    .pred-btn {
+      background: var(--pred-bg);
+      border: 2px solid var(--pred-border);
+      color: var(--pred-text);
+      border-radius: 12px;
+      font-family: 'Lexend Deca', sans-serif;
+      font-weight: 700;
+      transition: background 0.8s, border-color 0.8s, color 0.8s;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex: 1; position: relative; overflow: hidden;
+    }
+
+    /* ── Control tile ──────────────────────────────────────── */
+    .ctrl-tile {
+      background: var(--ctrl-bg);
+      border: 2px solid var(--ctrl-border);
+      color: var(--ctrl-text);
+      border-radius: 16px;
+      font-family: 'Lexend Deca', sans-serif;
+      font-weight: 700;
+      transition: background 0.8s, border-color 0.8s, color 0.8s;
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; position: relative; overflow: hidden;
+    }
+    .ctrl-label {
+      font-size: 10px;
+      color: var(--ctrl-label);
+      letter-spacing: 0.07em;
+      font-family: 'Space Mono', monospace;
+      text-transform: uppercase;
+      transition: color 0.8s;
+    }
+
+    /* ── Dwell progress bar ─────────────────────────────────── */
+    .dwell-bar {
+      position: absolute; inset-y-0: 0; left: 0; top: 0; bottom: 0;
+      background: var(--accent);
+      opacity: 0.22;
+      pointer-events: none;
+      transition: width 0.1s linear;
+      border-radius: inherit;
+    }
+
+    /* Calibration pulse */
+    @keyframes cp { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.1) } }
+    @keyframes fadein { from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:none } }
+    .fadein { animation: fadein 0.25s ease forwards; }
+
+    /* safe area */
+    .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  </style>
+</head>
+<body>
+
+<div id="ring-light"></div>
+<div id="eye-preview">
+  <canvas id="eye-crop-canvas" width="320" height="112"></canvas>
+  <div id="eye-preview-label">EYE REGION</div>
+</div>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const {
+  createContext, useContext, useState, useEffect, useRef, useCallback
+} = React;
+const {
+  Volume2, Trash2, Settings, X, User, Tv, Thermometer, Fan,
+  Lightbulb, Phone, Info, ChevronUp, ChevronDown, Power,
+  ArrowLeft, Radio, Wifi, Battery, Eye, Zap, Sun, Moon
+} = window.LucideReact;
+
+// ─── Camera-based ambient light theme ────────────────────
+// Samples average brightness from webcam every 3s.
+// Falls back gracefully if camera not available.
+// Brightness 0-255 bucketed: <30=night, 30-80=dim, 80-160=dusk, >160=day
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.classList.remove('day','dusk','night','dim');
+  if      (theme === 'day')  root.classList.add('day');
+  else if (theme === 'dusk') root.classList.add('dusk');
+  else if (theme === 'dim')  root.classList.add('dim');
+  // night = default vars (no class)
+}
+
+// Hidden canvas for brightness sampling (never shown to user)
+let _lightCanvas = null;
+let _lightCtx    = null;
+let _lightStream = null;
+let _lightVid    = null;
+let _lightActive = false;
+
+async function startLightSensor(onBrightness) {
+  if (_lightActive) return;
+  _lightActive = true;
+  try {
+    // Try environment-facing camera first for room light; fall back to user-facing
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width:64, height:64 }
+      });
+    } catch {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width:64, height:64 }
+      });
+    }
+    _lightStream = stream;
+    _lightVid = document.createElement('video');
+    _lightVid.srcObject = stream;
+    _lightVid.muted = true;
+    _lightVid.playsInline = true;
+    await _lightVid.play();
+
+    _lightCanvas = document.createElement('canvas');
+    _lightCanvas.width = 16; _lightCanvas.height = 16;
+    _lightCtx = _lightCanvas.getContext('2d', { willReadFrequently: true });
+
+    const sample = () => {
+      if (!_lightVid || _lightVid.readyState < 2) return;
+      _lightCtx.drawImage(_lightVid, 0, 0, 16, 16);
+      const d = _lightCtx.getImageData(0, 0, 16, 16).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        // Perceptual luminance
+        sum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      }
+      const avg = sum / (16*16);
+      onBrightness(avg);
+    };
+
+    // Sample every 3 seconds
+    sample();
+    return setInterval(sample, 3000);
+  } catch(e) {
+    console.warn('Light sensor unavailable, using time fallback:', e.message);
+    _lightActive = false;
+    // Fallback: time-of-day
+    const timeFallback = () => {
+      const h = new Date().getHours();
+      if (h >= 7 && h < 17) onBrightness(180);      // day
+      else if (h >= 17 && h < 20) onBrightness(90); // dusk
+      else onBrightness(20);                         // night
+    };
+    timeFallback();
+    return setInterval(timeFallback, 60000);
+  }
+}
+
+function brightnessToTheme(b) {
+  if (b > 140)      return 'day';
+  if (b > 60)       return 'dusk';
+  if (b > 25)       return 'dim';
+  return 'night';
+}
+
+// ─── Constants ───────────────────────────────────────────
+const AppMode = { DASHBOARD:'DASHBOARD', FRIENDS:'FRIENDS', TV:'TV', SETTINGS:'SETTINGS' };
+
+// ─── Gaze Context ────────────────────────────────────────
+const GazeCtx = createContext();
+const useGaze = () => useContext(GazeCtx);
+
+const GazeProvider = ({ children }) => {
+  const W = window.innerWidth, H = window.innerHeight;
+  const [gazePoint, setGazePoint]   = useState({ x: W/2, y: H/2 });
+  const [activeId,  setActiveId]    = useState(null);
+  const [dwellPct,  setDwellPct]    = useState(0);
+  const [eyeTracking, setEyeTracking] = useState(false);
+  const [calibrating, setCalibrating] = useState(false);
+  const [ringLight, setRingLight]   = useState(false);
+  const [dwellMs]                   = useState(1400);
+
+  const gazeRef    = useRef({ x: W/2, y: H/2 });
+  const targetsRef = useRef(new Map());
+  const activeRef  = useRef(null);
+  const dwellT0    = useRef(null);
+  const rafRef     = useRef(null);
+
+  const register   = useCallback((id, rect, cb) => targetsRef.current.set(id,{rect,cb}), []);
+  const unregister = useCallback((id) => targetsRef.current.delete(id), []);
+
+  useEffect(() => {
+    const el = document.getElementById('ring-light');
+    if (el) el.classList.toggle('active', ringLight);
+  }, [ringLight]);
+
+  const startEyePreview = useCallback(() => {
+    const preview = document.getElementById('eye-preview');
+    const canvas  = document.getElementById('eye-crop-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    preview.classList.add('active');
+    const draw = () => {
+      const vid = document.querySelector('video[id*="webgazer"]')
+               || document.querySelector('#webgazerVideoContainer video')
+               || document.querySelector('video');
+      if (vid && vid.readyState >= 2 && vid.videoWidth > 0) {
+        const vw = vid.videoWidth, vh = vid.videoHeight;
+        const sx = vw * 0.15, sy = vh * 0.25;
+        const sw = vw * 0.70, sh = vh * 0.30;
+        ctx.drawImage(vid, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      }
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }, []);
+
+  const startTracking = useCallback(async () => {
+    if (typeof webgazer === 'undefined') {
+      alert('WebGazer not loaded. Check your connection.');
+      return;
+    }
+    try {
+      setRingLight(true);
+      await webgazer
+        .setRegression('ridge')
+        .setTracker('TFFaceMesh')
+        .setGazeListener((data) => {
+          if (!data) return;
+          const lerp = 0.2;
+          gazeRef.current = {
+            x: gazeRef.current.x + (data.x - gazeRef.current.x) * lerp,
+            y: gazeRef.current.y + (data.y - gazeRef.current.y) * lerp,
+          };
+          setGazePoint({ ...gazeRef.current });
+        })
+        .saveDataAcrossSessions(true)
+        .begin();
+      webgazer.showVideoPreview(true).showPredictionPoints(false).applyKalmanFilter(true);
+      setEyeTracking(true);
+      setCalibrating(true);
+      setTimeout(startEyePreview, 2000);
+    } catch(e) {
+      console.error('WebGazer error:', e);
+      alert('Camera error: ' + e.message);
+    }
+  }, [startEyePreview]);
+
+  useEffect(() => {
+    if (eyeTracking) return;
+    const onMove  = (e) => { gazeRef.current = {x:e.clientX, y:e.clientY}; setGazePoint({...gazeRef.current}); };
+    const onTouch = (e) => {
+      const t = e.touches[0];
+      gazeRef.current = {x:t.clientX, y:t.clientY};
+      setGazePoint({...gazeRef.current});
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onTouch, {passive:true});
+    window.addEventListener('touchstart', onTouch, {passive:true});
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('touchmove', onTouch);
+      window.removeEventListener('touchstart', onTouch);
+    };
+  }, [eyeTracking]);
+
+  useEffect(() => {
+    const loop = (ts) => {
+      const g = gazeRef.current;
+      let hit = null;
+      for (const [id,t] of targetsRef.current) {
+        const r = t.rect;
+        if (g.x >= r.left && g.x <= r.right && g.y >= r.top && g.y <= r.bottom) { hit=id; break; }
+      }
+      if (hit) {
+        if (activeRef.current !== hit) {
+          activeRef.current = hit; setActiveId(hit);
+          dwellT0.current = ts; setDwellPct(0);
+        } else {
+          const p = Math.min((ts - dwellT0.current) / dwellMs, 1);
+          setDwellPct(p);
+          if (p >= 1) {
+            targetsRef.current.get(hit)?.cb();
+            activeRef.current = null; setActiveId(null);
+            dwellT0.current = null; setDwellPct(0);
+          }
+        }
+      } else {
+        activeRef.current = null; setActiveId(null);
+        dwellT0.current = null; setDwellPct(0);
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [dwellMs]);
+
+  return (
+    <GazeCtx.Provider value={{
+      gazePoint, activeId, dwellPct, eyeTracking,
+      calibrating, setCalibrating,
+      ringLight, setRingLight,
+      startTracking, register, unregister,
+    }}>
+      {children}
+    </GazeCtx.Provider>
+  );
+};
+
+// ─── JelloButton (gaze-aware) ────────────────────────────
+const JelloButton = ({ id, onClick, children, className='', style={}, active=false, disabled=false }) => {
+  const ref = useRef(null);
+  const { register, unregister, activeId, dwellPct } = useGaze();
+  const hot = activeId === id;
+
+  useEffect(() => {
+    if (disabled || !ref.current) return;
+    const update = () => {
+      if (ref.current) register(id, ref.current.getBoundingClientRect(), onClick);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => { unregister(id); window.removeEventListener('resize', update); };
+  }, [id, onClick, disabled]);
+
+  return (
+    <button
+      ref={ref}
+      disabled={disabled}
+      onClick={onClick}
+      style={style}
+      className={`${hot ? 'jello-active' : ''} ${active ? 'active-state' : ''} ${disabled ? 'opacity-30' : ''} ${className}`}
+    >
+      {hot && (
+        <div className="dwell-bar" style={{ width: `${dwellPct*100}%` }}/>
+      )}
+      <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,width:'100%',height:'100%'}}>
+        {children}
+      </div>
+    </button>
+  );
+};
+
+// ─── Gaze Cursor ─────────────────────────────────────────
+const GazeCursor = () => {
+  const { gazePoint, activeId, dwellPct } = useGaze();
+  return (
+    <div className="gaze-cursor" style={{ left: gazePoint.x, top: gazePoint.y }}>
+      <div style={{
+        width:44, height:44, borderRadius:'50%', border:`2.5px solid ${activeId ? 'var(--accent)' : 'rgba(255,255,255,0.25)'}`,
+        transform: activeId ? 'scale(1.25)' : 'scale(1)',
+        transition: 'border-color 0.1s, transform 0.1s',
+        position:'relative',
+      }}>
+        {activeId && (
+          <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',transform:'rotate(-90deg)'}} viewBox="0 0 44 44">
+            <circle cx="22" cy="22" r="20" fill="none" stroke="var(--accent)" strokeWidth="3"
+              strokeDasharray="126" strokeDashoffset={126*(1-dwellPct)}/>
+          </svg>
+        )}
+        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+          width:6,height:6,borderRadius:'50%',background:'var(--text-primary)'}}/>
+      </div>
+    </div>
+  );
+};
+
+// ─── Calibration Overlay ──────────────────────────────────
+const CalibOverlay = () => {
+  const { setCalibrating, ringLight } = useGaze();
+  const N = 3;
+  const POINTS = [
+    {id:1,vx:.1,vy:.1},{id:2,vx:.5,vy:.1},{id:3,vx:.9,vy:.1},
+    {id:4,vx:.1,vy:.5},{id:5,vx:.5,vy:.5},{id:6,vx:.9,vy:.5},
+    {id:7,vx:.1,vy:.9},{id:8,vx:.5,vy:.9},{id:9,vx:.9,vy:.9},
+  ];
+  const [idx, setIdx]     = useState(0);
+  const [cnt, setCnt]     = useState(0);
+  const [flash, setFlash] = useState(false);
+  const [done, setDone]   = useState(false);
+  const cur = POINTS[idx];
+  const px  = Math.round(cur?.vx * window.innerWidth);
+  const py  = Math.round(cur?.vy * window.innerHeight);
+
+  const tap = (e) => {
+    if (done) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    if (typeof webgazer !== 'undefined') webgazer.recordScreenPosition(r.left+r.width/2, r.top+r.height/2, 'click');
+    setFlash(true); setTimeout(()=>setFlash(false), 130);
+    const next = cnt + 1;
+    if (next >= N) {
+      if (idx+1 >= POINTS.length) { setDone(true); }
+      else { setIdx(i=>i+1); setCnt(0); }
+    } else setCnt(next);
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:10000,background:'#020817',cursor:'crosshair',touchAction:'none'}}>
+      {ringLight && <div style={{position:'fixed',inset:0,pointerEvents:'none',border:'5px solid rgba(255,255,255,0.92)',boxShadow:'0 0 22px 4px rgba(255,255,255,0.18)'}}/>}
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',textAlign:'center',pointerEvents:'none',opacity:done?0:0.35}}>
+        <div style={{fontSize:15,fontFamily:'Space Mono,monospace',color:'#94a3b8',letterSpacing:'0.1em'}}>LOOK · THEN TAP THE DOT</div>
+        <div style={{fontSize:12,fontFamily:'Space Mono,monospace',color:'#475569',marginTop:8}}>{idx+1}/{POINTS.length} · {cnt}/{N}</div>
+      </div>
+      <div style={{position:'absolute',bottom:32,left:'10%',right:'10%',height:4,background:'rgba(255,255,255,0.08)',borderRadius:4,pointerEvents:'none'}}>
+        <div style={{height:'100%',width:`${(idx/POINTS.length)*100}%`,background:'var(--accent)',borderRadius:4,transition:'width .3s'}}/>
+      </div>
+      {!done && (
+        <div style={{position:'absolute',left:px,top:py,transform:'translate(-50%,-50%)'}}>
+          <button onClick={tap} style={{
+            width:68,height:68,borderRadius:'50%',padding:0,cursor:'crosshair',
+            border:`3px solid ${flash?'#fff':'var(--accent)'}`,
+            background:flash?'rgba(255,255,255,.25)':'rgba(6,182,212,.12)',
+            boxShadow:flash?'0 0 40px rgba(255,255,255,.5)':'0 0 20px var(--accent-glow)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            animation:'cp 1.5s ease-in-out infinite',
+          }}>
+            <div style={{width:14,height:14,borderRadius:'50%',background:flash?'#fff':'var(--accent)'}}/>
+          </button>
+        </div>
+      )}
+      {done && (
+        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',textAlign:'center'}}>
+          <div style={{fontSize:48,marginBottom:14}}>✓</div>
+          <div style={{fontSize:26,fontWeight:900,color:'#fff',marginBottom:8}}>Calibration Complete</div>
+          <div style={{fontSize:14,color:'#64748b',marginBottom:40}}>9 points recorded</div>
+          <button onClick={()=>setCalibrating(false)} style={{
+            padding:'18px 56px',background:'#059669',border:'2px solid #34d399',
+            borderRadius:999,color:'#fff',fontSize:20,fontWeight:900,cursor:'pointer',
+            fontFamily:'Lexend Deca,sans-serif',
+            boxShadow:'0 0 40px rgba(5,150,105,.4)',
+          }}>BEGIN</button>
+        </div>
+      )}
+      <style>{`@keyframes cp{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}`}</style>
+    </div>
+  );
+};
+
+// ─── Keyboard ─────────────────────────────────────────────
+const Keyboard = ({ onKey, onDel, onSpace, onClear, onSpeak }) => {
+  const rows = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['Z','X','C','V','B','N','M'],
+  ];
+
+  // Key height: fill the available vertical space
+  const kh = Math.max(52, Math.floor(window.innerHeight * 0.095));
+  const fs  = Math.max(16, Math.floor(kh * 0.40));
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:5,width:'100%'}}>
+      {rows.map((row,i) => (
+        <div key={i} style={{display:'flex',gap:5,height:kh}}>
+          {row.map(c => (
+            <JelloButton key={c} id={`k-${c}`} onClick={()=>onKey(c)}
+              className="jkey"
+              style={{fontSize:fs, height:kh}}>
+              {c}
+            </JelloButton>
+          ))}
+        </div>
+      ))}
+      {/* Bottom action row */}
+      <div style={{display:'flex',gap:5,height:kh}}>
+        <JelloButton id="k-clear" onClick={onClear}
+          style={{width:kh,height:kh,flexShrink:0,background:'rgba(239,68,68,0.15)',border:'2px solid rgba(239,68,68,0.35)',borderRadius:14,color:'#fca5a5',cursor:'pointer'}}>
+          <Trash2 size={Math.floor(kh*0.38)}/>
+        </JelloButton>
+        <JelloButton id="k-space" onClick={onSpace}
+          className="jkey"
+          style={{flex:1, height:kh, fontSize:13, letterSpacing:'0.12em', fontFamily:'Space Mono,monospace'}}>
+          SPACE
+        </JelloButton>
+        <JelloButton id="k-del" onClick={onDel}
+          style={{width:kh,height:kh,flexShrink:0,background:'rgba(251,191,36,0.15)',border:'2px solid rgba(251,191,36,0.35)',borderRadius:14,color:'#fde68a',cursor:'pointer'}}>
+          <X size={Math.floor(kh*0.38)}/>
+        </JelloButton>
+        <JelloButton id="k-speak" onClick={onSpeak}
+          style={{width:kh*2.8,height:kh,flexShrink:0,background:'var(--accent)',border:'2px solid var(--accent)',borderRadius:14,color:'#fff',fontWeight:900,cursor:'pointer',fontSize:fs*0.8,fontFamily:'Lexend Deca,sans-serif'}}>
+          <Volume2 size={Math.floor(kh*0.4)}/>&nbsp;SPEAK
+        </JelloButton>
+      </div>
+    </div>
+  );
+};
+
+// ─── Control bar: lights / AC / fan / TV / socials ────────
+const ControlBar = ({ homeStates, setHomeStates, setMode }) => {
+  const th = Math.max(66, Math.floor(window.innerHeight * 0.10));
+  const iconSz = Math.floor(th * 0.32);
+  const valSz  = Math.floor(th * 0.30);
+  const lblSz  = Math.floor(th * 0.14);
+  const btnSz  = Math.floor(th * 0.26);
+
+  const tiles = [
+    // Light toggle
+    {
+      id:'ctrl-light', flex:1.1,
+      content: (
+        <>
+          <Lightbulb size={iconSz} style={{color: homeStates.light ? '#fbbf24' : 'var(--text-label)'}}/>
+          <span style={{fontSize:valSz,fontWeight:900,color:'var(--ctrl-text)'}}>{homeStates.light ? 'ON' : 'OFF'}</span>
+          <span className="ctrl-label" style={{fontSize:lblSz}}>LIGHTS</span>
+        </>
+      ),
+      onClick: () => setHomeStates(s=>({...s,light:!s.light})),
+      active: homeStates.light,
+    },
+    // AC
+    {
+      id:'ctrl-ac-panel', flex:1.5, noClick:true,
+      content: (
+        <>
+          <Thermometer size={iconSz} style={{color:'#34d399'}}/>
+          <span style={{fontSize:valSz,fontWeight:900,color:'var(--ctrl-text)'}}>{homeStates.ac}°</span>
+          <div style={{display:'flex',gap:4}}>
+            <JelloButton id="ctrl-acd" onClick={()=>setHomeStates(s=>({...s,ac:s.ac-1}))}
+              style={{width:btnSz*1.2,height:btnSz,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+              <ChevronDown size={btnSz*0.55}/>
+            </JelloButton>
+            <JelloButton id="ctrl-acu" onClick={()=>setHomeStates(s=>({...s,ac:s.ac+1}))}
+              style={{width:btnSz*1.2,height:btnSz,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+              <ChevronUp size={btnSz*0.55}/>
+            </JelloButton>
+          </div>
+          <span className="ctrl-label" style={{fontSize:lblSz}}>AC</span>
+        </>
+      ),
+    },
+    // Fan
+    {
+      id:'ctrl-fan-panel', flex:1.5, noClick:true,
+      content: (
+        <>
+          <Fan size={iconSz} style={{color:'#818cf8'}}/>
+          <span style={{fontSize:valSz,fontWeight:900,color:'var(--ctrl-text)'}}>{homeStates.fan}</span>
+          <div style={{display:'flex',gap:4}}>
+            <JelloButton id="ctrl-fand" onClick={()=>setHomeStates(s=>({...s,fan:Math.max(0,s.fan-1)}))}
+              style={{width:btnSz*1.2,height:btnSz,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+              <ChevronDown size={btnSz*0.55}/>
+            </JelloButton>
+            <JelloButton id="ctrl-fanu" onClick={()=>setHomeStates(s=>({...s,fan:Math.min(4,s.fan+1)}))}
+              style={{width:btnSz*1.2,height:btnSz,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+              <ChevronUp size={btnSz*0.55}/>
+            </JelloButton>
+          </div>
+          <span className="ctrl-label" style={{fontSize:lblSz}}>FAN</span>
+        </>
+      ),
+    },
+    // TV
+    {
+      id:'ctrl-tv', flex:1,
+      content: (
+        <>
+          <Tv size={iconSz} style={{color:'var(--accent)'}}/>
+          <span style={{fontSize:valSz*0.85,fontWeight:900,color:'var(--ctrl-text)'}}>TV</span>
+          <span className="ctrl-label" style={{fontSize:lblSz}}>REMOTE</span>
+        </>
+      ),
+      onClick: () => setMode(AppMode.TV),
+    },
+    // Socials / People
+    {
+      id:'ctrl-people', flex:1,
+      content: (
+        <>
+          <Phone size={iconSz} style={{color:'#4ade80'}}/>
+          <span style={{fontSize:valSz*0.85,fontWeight:900,color:'var(--ctrl-text)'}}>CALL</span>
+          <span className="ctrl-label" style={{fontSize:lblSz}}>PEOPLE</span>
+        </>
+      ),
+      onClick: () => setMode(AppMode.FRIENDS),
+    },
+  ];
+
+  return (
+    <div style={{display:'flex',gap:6,height:th,flexShrink:0}}>
+      {tiles.map(tile => (
+        tile.noClick
+          ? (
+            <div key={tile.id} className="ctrl-tile" style={{flex:tile.flex,height:th,padding:'4px 6px'}}>
+              {tile.content}
+            </div>
+          )
+          : (
+            <JelloButton key={tile.id} id={tile.id} onClick={tile.onClick || (()=>{})}
+              className="ctrl-tile"
+              style={{flex:tile.flex,height:th,padding:'4px 6px',
+                background: tile.active ? 'rgba(251,191,36,0.18)' : 'var(--ctrl-bg)',
+                borderColor: tile.active ? 'rgba(251,191,36,0.45)' : 'var(--ctrl-border)',
+              }}>
+              {tile.content}
+            </JelloButton>
+          )
+      ))}
+    </div>
+  );
+};
+
+// ─── Main App ─────────────────────────────────────────────
+const App = () => {
+  const { startTracking, calibrating, setCalibrating, ringLight, setRingLight, eyeTracking } = useGaze();
+  const [text, setText] = useState('');
+  const [mode, setMode] = useState(AppMode.DASHBOARD);
+  const [homeStates, setHomeStates] = useState({ light:true, ac:24, fan:2 });
+  const [lightTheme, setLightTheme] = useState('night');
+
+  // Camera-based ambient light theming
+  useEffect(() => {
+    let intervalId = null;
+    startLightSensor((brightness) => {
+      const t = brightnessToTheme(brightness);
+      setLightTheme(t);
+      applyTheme(t);
+    }).then(id => { intervalId = id; });
+    return () => { if (intervalId) clearInterval(intervalId); };
+  }, []);
+
+  const phrases = ['URGENT HELP', "I'M TIRED", 'THANK YOU', 'YES', 'NO'];
+  const preds   = text
+    ? ['Hello', 'Thanks', 'Need help', 'More', 'Please', 'Water']
+    : ['Water', 'Coffee', 'Bathroom', 'Pillow', 'Medicine', 'TV'];
+
+  const speak = () => {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.92;
+    window.speechSynthesis.speak(u);
+  };
+
+  const HEADER_H = 58;
+
+  // Heights for the layout (predictable vertical distribution)
+  const outputH    = Math.max(72, Math.floor(window.innerHeight * 0.115));
+  const phraseH    = Math.max(52, Math.floor(window.innerHeight * 0.072));
+  const predH      = Math.max(52, Math.floor(window.innerHeight * 0.072));
+
+  const themeIcon = lightTheme === 'day'
+    ? <Sun size={12} style={{color:'var(--accent)'}}/>
+    : lightTheme === 'dusk'
+    ? <span style={{fontSize:12}}>🌅</span>
+    : lightTheme === 'dim'
+    ? <Moon size={12} style={{color:'var(--accent)',opacity:0.6}}/>
+    : <Moon size={12} style={{color:'var(--accent)'}}/>;
+
+  const themeLabel = { day:'BRIGHT', dusk:'WARM', dim:'DIM', night:'DARK' }[lightTheme] || 'DARK';
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',width:'100%',overflow:'hidden',background:'var(--bg-primary)',transition:'background 1.2s ease'}}>
+
+      {/* ── Header ─────────────────────────────────────── */}
+      <header style={{
+        height: HEADER_H,
+        flexShrink: 0,
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'0 10px',
+        background:'var(--bg-secondary)',
+        borderBottom:'1.5px solid var(--border-color)',
+        zIndex:100,
+        transition:'background 1.2s ease, border-color 0.8s ease',
+      }}>
+        {/* Left: Logo + nav */}
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <span style={{fontSize:22,fontWeight:900,color:'var(--accent)',fontStyle:'italic',letterSpacing:'-0.05em',fontFamily:'Lexend Deca,sans-serif',marginRight:4}}>
+            JELLO<span style={{color:'var(--text-label)',fontStyle:'normal'}}>OS</span>
+          </span>
+          {[
+            {id:'nav-dash', label:'HOME',   m:AppMode.DASHBOARD},
+            {id:'nav-tv',   label:'TV',     m:AppMode.TV},
+            {id:'nav-fr',   label:'SOCIAL', m:AppMode.FRIENDS},
+            {id:'nav-set',  label:'⚙',      m:AppMode.SETTINGS},
+          ].map(n => (
+            <JelloButton key={n.id} id={n.id} onClick={()=>setMode(n.m)} active={mode===n.m}
+              style={{
+                padding:'7px 12px', height:38, borderRadius:10,
+                fontSize:13, fontWeight:700, fontFamily:'Lexend Deca,sans-serif',
+                background: mode===n.m ? 'var(--accent-btn)' : 'transparent',
+                border: `1.5px solid ${mode===n.m ? 'var(--accent)' : 'var(--border-color)'}`,
+                color: mode===n.m ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor:'pointer',
+              }}>
+              {n.label}
+            </JelloButton>
+          ))}
+        </div>
+
+        {/* Right: time-theme + ring light + eye cal */}
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div id="theme-dot">
+            <div className="dot"/>
+            {themeIcon}
+            <span style={{fontSize:11,fontFamily:'Space Mono,monospace'}}>{themeLabel}</span>
+          </div>
+
+          <JelloButton id="h-ring" onClick={()=>setRingLight(r=>!r)}
+            style={{
+              padding:'7px 10px', height:38, borderRadius:10,
+              fontSize:11, fontWeight:700, fontFamily:'Space Mono,monospace',
+              background: ringLight ? 'rgba(255,255,255,0.9)' : 'var(--bg-card)',
+              border: `1.5px solid ${ringLight ? '#fff' : 'var(--border-color)'}`,
+              color: ringLight ? '#000' : 'var(--text-secondary)',
+              cursor:'pointer',
+            }}>
+            ◎ LIGHT
+          </JelloButton>
+
+          <JelloButton id="h-eye" onClick={startTracking}
+            style={{
+              padding:'7px 10px', height:38, borderRadius:10,
+              fontSize:11, fontWeight:700, fontFamily:'Space Mono,monospace',
+              display:'flex', alignItems:'center', gap:4,
+              background: eyeTracking ? 'var(--accent)' : 'var(--accent-btn)',
+              border: `1.5px solid ${eyeTracking ? 'var(--accent)' : 'var(--border-color)'}`,
+              color: eyeTracking ? '#fff' : 'var(--accent)',
+              cursor:'pointer',
+            }}>
+            <Eye size={13}/> EYE CAL
+          </JelloButton>
+        </div>
+      </header>
+
+      <GazeCursor/>
+      {calibrating && <CalibOverlay/>}
+
+      {/* ── Content ────────────────────────────────────── */}
+      <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column',padding:'8px 8px 6px 8px',gap:6}}>
+
+        {mode === AppMode.DASHBOARD && (
+          <>
+            {/* ── Output field (large, matches keyboard width) ── */}
+            <div className="output-field" style={{flexShrink:0, height:outputH, position:'relative', padding:'10px 16px'}}>
+              <textarea
+                readOnly value={text}
+                placeholder="Dwell to communicate..."
+                className="no-scroll"
+                style={{
+                  width:'100%', height:'100%',
+                  background:'transparent', border:'none', outline:'none',
+                  resize:'none', color:'var(--text-primary)',
+                  fontSize: Math.max(22, Math.floor(outputH * 0.38)),
+                  fontWeight:700, lineHeight:1.3,
+                  fontFamily:'Lexend Deca,sans-serif',
+                  transition:'color 0.8s',
+                }}
+              />
+            </div>
+
+            {/* ── Quick phrases ── */}
+            <div style={{display:'flex',gap:5,flexShrink:0,height:phraseH,overflowX:'auto'}} className="no-scroll">
+              {phrases.map((p,i) => (
+                <JelloButton key={i} id={`ph-${i}`} onClick={()=>setText(p)}
+                  className="phrase-btn"
+                  style={{
+                    padding:'0 14px', flexShrink:0,
+                    fontSize: Math.max(14, Math.floor(phraseH * 0.32)),
+                    height:phraseH,
+                  }}>
+                  {p}
+                </JelloButton>
+              ))}
+            </div>
+
+            {/* ── Predictions ── */}
+            <div style={{display:'flex',gap:5,flexShrink:0,height:predH}}>
+              {preds.map((p,i) => (
+                <JelloButton key={i} id={`pd-${i}`} onClick={()=>setText(t=>t+(t?' ':'')+p)}
+                  className="pred-btn"
+                  style={{
+                    fontSize: Math.max(14, Math.floor(predH * 0.32)),
+                    height:predH,
+                  }}>
+                  {p}
+                </JelloButton>
+              ))}
+            </div>
+
+            {/* ── Control bar ── */}
+            <ControlBar homeStates={homeStates} setHomeStates={setHomeStates} setMode={setMode}/>
+
+            {/* ── Keyboard fills remaining space ── */}
+            <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+              <Keyboard
+                onKey={c=>setText(t=>t+c)}
+                onDel={()=>setText(t=>t.slice(0,-1))}
+                onSpace={()=>setText(t=>t+' ')}
+                onClear={()=>setText('')}
+                onSpeak={speak}
+              />
+            </div>
+          </>
+        )}
+
+        {/* ── TV Mode ── */}
+        {mode === AppMode.TV && (
+          <div style={{flex:1,display:'flex',flexDirection:'column',gap:8,overflowY:'auto'}} className="no-scroll fadein">
+            <JelloButton id="tv-back" onClick={()=>setMode(AppMode.DASHBOARD)}
+              style={{padding:'12px 18px',alignSelf:'flex-start',background:'rgba(239,68,68,0.15)',border:'2px solid rgba(239,68,68,0.35)',borderRadius:14,color:'#fca5a5',fontWeight:700,fontSize:15,fontFamily:'Lexend Deca,sans-serif',display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+              <ArrowLeft size={18}/> BACK
+            </JelloButton>
+            <div className="jcard" style={{padding:18}}>
+              <div style={{fontSize:15,fontWeight:700,color:'var(--accent)',marginBottom:14,fontFamily:'Space Mono,monospace',letterSpacing:'0.08em'}}>TV REMOTE</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+                {['VOL +','CH +','MUTE','VOL -','CH -','INPUT','POWER','NETFLIX','YOUTUBE'].map((l,i) => (
+                  <JelloButton key={l} id={`tv-${i}`} onClick={()=>{}}
+                    style={{
+                      height:64,borderRadius:14,
+                      background: l==='POWER'?'rgba(239,68,68,.15)':l==='NETFLIX'?'rgba(239,68,68,.2)':'var(--ctrl-bg)',
+                      border: `2px solid ${l==='POWER'||l==='NETFLIX'?'rgba(239,68,68,.4)':'var(--ctrl-border)'}`,
+                      color: l==='POWER'||l==='NETFLIX'?'#fca5a5':'var(--ctrl-text)',
+                      fontSize:16, fontWeight:700, fontFamily:'Lexend Deca,sans-serif',cursor:'pointer',
+                    }}>
+                    {l}
+                  </JelloButton>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Social / People Mode ── */}
+        {mode === AppMode.FRIENDS && (
+          <div style={{flex:1,display:'flex',flexDirection:'column',gap:8}} className="fadein">
+            <JelloButton id="fr-back" onClick={()=>setMode(AppMode.DASHBOARD)}
+              style={{padding:'12px 18px',alignSelf:'flex-start',background:'rgba(239,68,68,0.15)',border:'2px solid rgba(239,68,68,0.35)',borderRadius:14,color:'#fca5a5',fontWeight:700,fontSize:15,fontFamily:'Lexend Deca,sans-serif',display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+              <ArrowLeft size={18}/> BACK
+            </JelloButton>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,flex:1}}>
+              {['Maria','John','Doctor','Support'].map((n,i) => (
+                <JelloButton key={n} id={`fr-${i}`}
+                  onClick={()=>window.open(`https://wa.me/123?text=${encodeURIComponent(text)}`)}
+                  style={{
+                    borderRadius:18, background:'rgba(52,211,153,0.08)', border:'2px solid rgba(52,211,153,0.28)',
+                    color:'#34d399', flexDirection:'column', gap:10, fontSize:20, fontWeight:900,
+                    fontFamily:'Lexend Deca,sans-serif', cursor:'pointer',
+                  }}>
+                  <User size={40}/>
+                  {n.toUpperCase()}
+                  <span style={{fontSize:12,color:'rgba(52,211,153,0.55)',fontFamily:'Space Mono,monospace'}}>SEND MESSAGE</span>
+                </JelloButton>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Settings Mode ── */}
+        {mode === AppMode.SETTINGS && (
+          <div style={{flex:1,display:'flex',flexDirection:'column',gap:8,overflowY:'auto'}} className="no-scroll fadein">
+            <JelloButton id="s-back" onClick={()=>setMode(AppMode.DASHBOARD)}
+              style={{padding:'12px 18px',alignSelf:'flex-start',background:'rgba(239,68,68,0.15)',border:'2px solid rgba(239,68,68,0.35)',borderRadius:14,color:'#fca5a5',fontWeight:700,fontSize:15,fontFamily:'Lexend Deca,sans-serif',display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+              <ArrowLeft size={18}/> BACK
+            </JelloButton>
+            <div className="jcard" style={{padding:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--accent)',marginBottom:14,fontFamily:'Space Mono,monospace',letterSpacing:'0.08em'}}>ENVIRONMENT</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <JelloButton id="s-light" onClick={()=>setHomeStates(s=>({...s,light:!s.light}))}
+                  style={{height:72,borderRadius:14,background:homeStates.light?'rgba(251,191,36,0.18)':'var(--ctrl-bg)',border:`2px solid ${homeStates.light?'rgba(251,191,36,0.5)':'var(--ctrl-border)'}`,color:'var(--ctrl-text)',fontSize:15,fontWeight:700,fontFamily:'Lexend Deca,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8,cursor:'pointer'}}>
+                  <Lightbulb size={22} style={{color:homeStates.light?'#fbbf24':'var(--text-label)'}}/> LIGHTS {homeStates.light?'ON':'OFF'}
+                </JelloButton>
+                <JelloButton id="s-ring" onClick={()=>setRingLight(r=>!r)}
+                  style={{height:72,borderRadius:14,background:ringLight?'rgba(255,255,255,0.18)':'var(--ctrl-bg)',border:`2px solid ${ringLight?'rgba(255,255,255,0.5)':'var(--ctrl-border)'}`,color:'var(--ctrl-text)',fontSize:15,fontWeight:700,fontFamily:'Lexend Deca,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8,cursor:'pointer'}}>
+                  ◎ RING LIGHT
+                </JelloButton>
+
+                {/* AC */}
+                <div className="ctrl-tile" style={{height:90,padding:12}}>
+                  <Thermometer size={20} style={{color:'#34d399'}}/>
+                  <span style={{fontSize:22,fontWeight:900,color:'var(--ctrl-text)'}}>{homeStates.ac}°</span>
+                  <div style={{display:'flex',gap:5}}>
+                    <JelloButton id="set-acd" onClick={()=>setHomeStates(s=>({...s,ac:s.ac-1}))}
+                      style={{width:36,height:36,borderRadius:8,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+                      <ChevronDown size={16}/>
+                    </JelloButton>
+                    <JelloButton id="set-acu" onClick={()=>setHomeStates(s=>({...s,ac:s.ac+1}))}
+                      style={{width:36,height:36,borderRadius:8,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+                      <ChevronUp size={16}/>
+                    </JelloButton>
+                  </div>
+                  <span className="ctrl-label" style={{fontSize:11}}>AC TEMP</span>
+                </div>
+
+                {/* Fan */}
+                <div className="ctrl-tile" style={{height:90,padding:12}}>
+                  <Fan size={20} style={{color:'#818cf8'}}/>
+                  <span style={{fontSize:22,fontWeight:900,color:'var(--ctrl-text)'}}>{homeStates.fan}</span>
+                  <div style={{display:'flex',gap:5}}>
+                    <JelloButton id="set-fand" onClick={()=>setHomeStates(s=>({...s,fan:Math.max(0,s.fan-1)}))}
+                      style={{width:36,height:36,borderRadius:8,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+                      <ChevronDown size={16}/>
+                    </JelloButton>
+                    <JelloButton id="set-fanu" onClick={()=>setHomeStates(s=>({...s,fan:Math.min(4,s.fan+1)}))}
+                      style={{width:36,height:36,borderRadius:8,background:'var(--bg-card)',border:'1.5px solid var(--border-color)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ctrl-text)'}}>
+                      <ChevronUp size={16}/>
+                    </JelloButton>
+                  </div>
+                  <span className="ctrl-label" style={{fontSize:11}}>FAN SPEED</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Root = () => (
+  <GazeProvider><App/></GazeProvider>
+);
+
+function mountApp() {
+  window.ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+}
+if (window.__depsReady) { mountApp(); }
+else { document.addEventListener('deps-ready', mountApp, {once:true}); }
+</script>
+</body>
+</html>
