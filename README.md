@@ -8,7 +8,7 @@ Built by [ALTRU.dev](https://altru.dev) — Code for Humanity · GPLv3
 
 ---
 
-![JelloOS main interface — gaze keyboard with phrase tiles and smart controls](docs/screenshot-main.png)
+![JelloOS main interface — gaze keyboard with phrase tiles and smart controls](docs/screenshot-main.png.png)
 
 ---
 
@@ -35,7 +35,7 @@ JelloOS turns a standard webcam into a communication device. The user looks at k
 
 ### Main interface
 
-![JelloOS keyboard and phrase tiles](docs/screenshot-main.png)
+![JelloOS keyboard and phrase tiles](docs/screenshot-main.png.png)
 
 The main screen. Quick phrases at top, environment control tiles in the middle, full gaze keyboard below. The dot in the centre is the Jello cursor — it follows your gaze with spring physics.
 
@@ -43,7 +43,7 @@ The main screen. Quick phrases at top, environment control tiles in the middle, 
 
 ### Gaze diagnostics — setup panel
 
-![Diagnostics tool — WebGazer status, face positioning guide, lighting analysis](docs/screenshot-diagnostics-setup.png)
+![Diagnostics tool — WebGazer status, face positioning guide, lighting analysis](docs/screenshot-diagnostics-setup.png.png)
 
 The diagnostics tool opens in a separate page. Left to right: WebGazer load status, camera permission state, and the WebGazer Init panel showing active regression mode, webgazer-aac version, prediction confidence, and adaptive recalibration status. Below: live face positioning guide with camera feed, and the lighting + eye quality meters.
 
@@ -51,7 +51,7 @@ The diagnostics tool opens in a separate page. Left to right: WebGazer load stat
 
 ### Gaze diagnostics — calibration and heatmap
 
-![Diagnostics tool — live predictions, gaze heatmap, calibration grid, accuracy test](docs/screenshot-diagnostics-calibration.png)
+![Diagnostics tool — live predictions, gaze heatmap, calibration grid, accuracy test](docs/screenshot-diagnostics-calibration.png.png)
 
 Live gaze prediction stats (X/Y coordinates, FPS, null rate, stability), rolling 5-second heatmap, 9-point smart calibration with per-point quality scoring (green = good, amber = acceptable, red = redo), and post-calibration accuracy test.
 
@@ -59,7 +59,7 @@ Live gaze prediction stats (X/Y coordinates, FPS, null rate, stability), rolling
 
 ### Post-calibration accuracy test
 
-![9-zone accuracy test grid](docs/screenshot-accuracy-test.png)
+![9-zone accuracy test grid](docs/screenshot-accuracy-test.png.png)
 
 After calibration, the accuracy test measures actual pixel error per screen zone. Look at each target for 1.5 seconds; the tool reports error radius per quadrant so you know exactly where the model performs well and where it needs more calibration points.
 
@@ -67,7 +67,7 @@ After calibration, the accuracy test measures actual pixel error per screen zone
 
 ### Dwell hit detection and controls
 
-![Dwell hit arena and regression switcher](docs/screenshot-dwell-controls.png)
+![Dwell hit arena and regression switcher](docs/screenshot-dwell-controls.png.png)
 
 The dwell hit arena (top) tests gaze activation across 7 screen zones before using the main app. The controls panel (bottom) shows the regression switcher — swap between Polynomial, RBF, and Ridge regression live. The event log on the right shows webgazer-aac install status and calibration events.
 
