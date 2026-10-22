@@ -29,7 +29,7 @@ start.addEventListener('click', async () => {
   active = session;
   start.disabled = true;
   stop.disabled = false;
-  status.textContent = 'Requesting camera; then loading local model assets…';
+  status.textContent = 'Requesting camera; then downloading pinned model assets…';
   evidence.textContent = 'No frame observed.';
   try {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -38,8 +38,8 @@ start.addEventListener('click', async () => {
     const resources = await session.open(
       () => navigator.mediaDevices.getUserMedia({ video: true, audio: false }),
       async () => FaceLandmarker.createFromOptions(
-        await FilesetResolver.forVisionTasks('/mediapipe/wasm'),
-        { baseOptions: { modelAssetPath: '/mediapipe/face_landmarker.task' },
+        await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'),
+        { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task' },
           runningMode: 'VIDEO', numFaces: 2,
           outputFaceBlendshapes: false, outputFacialTransformationMatrixes: false },
       ),
@@ -72,7 +72,7 @@ start.addEventListener('click', async () => {
     };
     tick();
   } catch (error) {
-    if (active === session) finish(`Start failed — ${error instanceof Error ? error.message : String(error)}. Check camera permissions and local MediaPipe assets (see docs).`);
+    if (active === session) finish(`Start failed — ${error instanceof Error ? error.message : String(error)}. Check camera permissions and network access to pinned MediaPipe assets.`);
   }
 });
 stop.addEventListener('click', () => finish());
