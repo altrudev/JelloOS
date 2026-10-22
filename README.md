@@ -286,7 +286,7 @@ GPLv3 — see [LICENSE](LICENSE).
 
 `webgazer-aac.js` is also GPLv3, same as upstream WebGazer.
 
-If your organisation's valuation is under $1,000,000, you may use both under LGPLv3. For other arrangements, open an issue.
+Licensing must follow the actual LICENSE files and upstream third-party rights. The project does not grant an alternative LGPL license based on organisation valuation.
 
 ---
 
