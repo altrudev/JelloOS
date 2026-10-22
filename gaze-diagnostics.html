@@ -1115,7 +1115,7 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
   // ── Install webgazer-aac if available ──
   const aacAvailable = typeof webgazerAAC !== 'undefined';
   if(aacAvailable){
-    webgazerAAC.install().enableAdaptiveRecalibration();
+    webgazerAAC.install(); // DDC: holdout integrity, no automatic self-training.
     document.getElementById('aac-status').textContent='✓ installed v'+webgazerAAC.version;
     document.getElementById('aac-status').style.color='var(--green)';
     document.getElementById('aac-recalib').textContent='✓ enabled';
@@ -1185,7 +1185,7 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
 
         lastPredTime=now;
       })
-      .saveDataAcrossSessions(true)
+      .saveDataAcrossSessions(false)
       .begin();
 
     document.getElementById('wg-begun').textContent='✓ yes';
