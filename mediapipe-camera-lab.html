@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>JelloOS · MediaPipe camera observation lab</title>
+  <style>
+    body { font: 17px/1.5 system-ui,sans-serif; background:#101a25; color:#eef6ff; margin:2rem auto; padding:0 1rem; max-width:850px; }
+    button { font:inherit; padding:.7rem 1rem; margin:0 .5rem .8rem 0; }
+    video { display:block; width:100%; max-height:420px; background:#000; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#1e3041; padding:1rem; }
+  </style>
+</head>
+<body>
+  <h1>MediaPipe camera observation lab</h1>
+  <p>Local camera inference only. Start requests camera permission. Stop releases the camera and model. Leaving or hiding this page also stops the session.</p>
+  <p>This observes image landmarks only. No screen gaze, calibration, dwell, selection, recording, or video upload.</p>
+  <p>Independent eye confidence and openness are unavailable from this model. They remain unavailable; valid landmark frames are still rejected with <code>missing-eye-quality</code>. Model scores and blink blendshapes are never substituted.</p>
+  <button id="start" type="button">Start camera</button>
+  <button id="stop" type="button" disabled>Stop</button>
+  <p id="status" role="status">Idle — camera has not been requested.</p>
+  <video id="preview" autoplay muted playsinline aria-label="Unmirrored local camera preview"></video>
+  <h2>Latest frame evidence</h2>
+  <pre id="evidence">No frame observed.</pre>
+  <script type="module" src="/labs/mediaPipeCameraLab.ts"></script>
+</body>
+</html>
