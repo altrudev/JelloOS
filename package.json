@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:iris": "node --experimental-strip-types --test test/irisGeometry.test.ts"
   },
   "dependencies": {
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "@google/genai": "1.40.0",
-    "lucide-react": "0.463.0"
+    "lucide-react": "0.463.0",
+    "@mediapipe/tasks-vision": "0.10.18"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
