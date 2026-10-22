@@ -95,5 +95,3 @@ test('accepted snapshot shares no mutable objects with the input', () => {
   assert.equal(result.observation.left.x, 0.4);
   assert.equal(result.observation.right.openness, 0.5);
 });
-
-[executed on device: vps-377a113a (b5f97e3f-b6d4-4a37-9614-85905ab97c68)]
