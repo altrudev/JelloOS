@@ -51,7 +51,7 @@ start.addEventListener('click', async () => {
     }));
     await video.play();
     if (active !== session) return;
-    status.textContent = 'Running — local inference; independent eye quality unavailable.';
+    status.textContent = 'Running — local inference; measured geometry only; gaze actions disabled.';
     let lastVideoTime = -1;
     let frames = 0;
     const tick = () => {
@@ -64,7 +64,7 @@ start.addEventListener('click', async () => {
           evidence.textContent = JSON.stringify({ frame: frames,
             timestampMs: frame.timestampMs,
             inferenceMs: frame.completedMs - frame.timestampMs,
-            eyeConfidence: 'unavailable', eyeOpenness: 'unavailable',
+            eyeConfidence: 'unavailable', measurements: frame.measurements,
             ...frame.evidence }, null, 2);
         }
         animation = requestAnimationFrame(tick);
