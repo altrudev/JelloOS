@@ -117,8 +117,9 @@ export const GazeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof webgazer === 'undefined') return;
 
     try {
+        webgazer.params.faceMeshSolutionPath = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619';
         await webgazer.setRegression('ridge')
-            .setTracker('clmtrackr')
+            .setTracker('TFFaceMesh')
             .setGazeListener((data: any) => {
                 if (data == null) return;
                 const currentX = gazePointRef.current.x;
@@ -130,7 +131,7 @@ export const GazeProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
                 setGazePoint(gazePointRef.current);
             })
-            .saveDataAcrossSessions(true)
+            .saveDataAcrossSessions(false)
             .begin();
         
         webgazer.showVideoPreview(true)
