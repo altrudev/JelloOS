@@ -1118,7 +1118,7 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
     webgazerAAC.install(); // DDC: holdout integrity, no automatic self-training.
     document.getElementById('aac-status').textContent='✓ installed v'+webgazerAAC.version;
     document.getElementById('aac-status').style.color='var(--green)';
-    document.getElementById('aac-recalib').textContent='✓ enabled';
+    document.getElementById('aac-recalib').textContent='disabled for validation';
     document.getElementById('aac-recalib').style.color='var(--green)';
     updateRegUI('polynomial');
     log('webgazer-aac installed — polynomial regression active.','ok');
@@ -1132,6 +1132,7 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
   try {
     webgazer.showVideoPreview(true).showPredictionPoints(true).applyKalmanFilter(true);
 
+    webgazer.params.faceMeshSolutionPath = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619';
     await webgazer
       .setRegression('ridge')
       .setTracker('TFFaceMesh')
