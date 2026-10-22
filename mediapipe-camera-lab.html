@@ -16,7 +16,7 @@
   <h1>MediaPipe camera observation lab</h1>
   <p>Local camera inference only. Start requests camera permission. Stop releases the camera and model. Leaving or hiding this page also stops the session.</p>
   <p>This observes image landmarks only. No screen gaze, calibration, dwell, selection, recording, or video upload.</p>
-  <p>Independent eye confidence and openness are unavailable from this model. They remain unavailable; valid landmark frames are still rejected with <code>missing-eye-quality</code>. Model scores and blink blendshapes are never substituted.</p>
+  <p>Per-eye eyelid openness, iris fit residuals and feature resolution are measured in camera pixels and ratios. Engineering geometry gates are not calibrated probabilities or gaze accuracy. Independent eye confidence remains unavailable; valid landmark frames are still rejected with <code>missing-eye-quality</code>. Model scores and blink blendshapes are never substituted.</p>
   <button id="start" type="button">Start camera</button>
   <button id="stop" type="button" disabled>Stop</button>
   <p id="status" role="status">Idle — camera has not been requested.</p>
