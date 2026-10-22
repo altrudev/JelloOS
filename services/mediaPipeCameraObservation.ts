@@ -1,3 +1,4 @@
+import { measureIrisGeometry } from './measuredIrisGeometry';
 import { adaptMediaPipeIrisObservation, type MediaPipeIrisResult } from './mediaPipeIrisAdapter';
 
 /** Deliberately accepts raw output, never model thresholds or blendshapes as eye quality. */
@@ -13,12 +14,13 @@ export function observeCameraFrame(
   detector: VideoLandmarker,
   video: HTMLVideoElement,
   clock: () => number,
-): { timestampMs: number; completedMs: number; evidence: MediaPipeIrisResult } {
+): { timestampMs: number; completedMs: number; evidence: MediaPipeIrisResult; measurements: ReturnType<typeof measureIrisGeometry> } {
   const timestampMs = clock();
   const result = detector.detectForVideo(video, timestampMs);
   const completedMs = clock();
   return { timestampMs, completedMs,
-    evidence: adaptMediaPipeIrisObservation({ timestampMs, result }, completedMs) };
+    evidence: adaptMediaPipeIrisObservation({ timestampMs, result }, completedMs),
+    measurements: measureIrisGeometry({ timestampMs, result, width: video.videoWidth, height: video.videoHeight }, completedMs) };
 }
 
 /** Owns camera/model lifetime, including resources resolving after Stop. */
