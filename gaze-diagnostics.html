@@ -423,7 +423,7 @@
             <div class="stat-row"><span class="stat-label">Left patch brightness</span><span class="stat-value dim" id="eye-l-bright">—</span></div>
             <div class="stat-row"><span class="stat-label">Right patch brightness</span><span class="stat-value dim" id="eye-r-bright">—</span></div>
             <div class="stat-row"><span class="stat-label">Eye visibility score</span><span class="stat-value dim" id="eye-vis-score">—</span></div>
-            <div class="stat-row"><span class="stat-label">Pupil detect estimate</span><span class="stat-value dim" id="eye-pupil">—</span></div>
+            <div class="stat-row"><span class="stat-label">Dark pixel fraction (not pupil detection)</span><span class="stat-value dim" id="eye-pupil">—</span></div>
           </div>
         </div>
       </div>
@@ -935,17 +935,17 @@ function scoreEyePatch(ctx, canvas) {
     for(let i=0;i<d.length;i+=4){
       const l=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
       bright+=l; px++;
-      if(l<40) darkPx++; // pupil candidate pixels
+      if(l<40) darkPx++; // dark pixels include shadows/lashes; NOT a pupil detector
     }
     bright/=px;
-    const pupilRatio=darkPx/px;
+    const darkPixelRatio=darkPx/px;
     // Quality: want moderate brightness (25-180) and some dark pixels (pupil ~5-25%)
     let q=0;
     if(bright>20&&bright<200) q+=40;
     if(bright>40&&bright<160) q+=20;
-    if(pupilRatio>0.03&&pupilRatio<0.35) q+=30;
-    if(pupilRatio>0.07&&pupilRatio<0.22) q+=10;
-    return { quality: Math.min(100,q), brightness: Math.round(bright), pupilRatio: Math.round(pupilRatio*100) };
+    if(darkPixelRatio>0.03&&darkPixelRatio<0.35) q+=15;
+    if(darkPixelRatio>0.07&&darkPixelRatio<0.22) q+=5;
+    return { quality: Math.min(100,q), brightness: Math.round(bright), darkPixelRatio: Math.round(darkPixelRatio*100) };
   } catch(e){ return { quality:0, brightness:0, pupilRatio:0 }; }
 }
 
@@ -1000,7 +1000,7 @@ function updateEyeQualityUI(lS,rS){
   el('eye-q-right-val').textContent=rS.quality+'%'; el('eye-q-right-val').style.color=qualityColor(rS.quality);
   el('eye-l-bright').textContent=lS.brightness; el('eye-r-bright').textContent=rS.brightness;
   el('eye-vis-score').textContent=avgQ+'%'; el('eye-vis-score').style.color=qualityColor(avgQ);
-  el('eye-pupil').textContent=`L:${lS.pupilRatio}% R:${rS.pupilRatio}%`;
+  el('eye-pupil').textContent=`L:${lS.darkPixelRatio}% R:${rS.darkPixelRatio}% (dark pixels; not pupil)`;
 
   const eyeChip=document.getElementById('patch-chip')||{};
   if(avgQ>=65){ chip('patch-chip','ok','eyes visible'); }
@@ -1115,10 +1115,10 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
   // ── Install webgazer-aac if available ──
   const aacAvailable = typeof webgazerAAC !== 'undefined';
   if(aacAvailable){
-    webgazerAAC.install().enableAdaptiveRecalibration();
+    webgazerAAC.install(); // DDC: holdout integrity, no automatic self-training.
     document.getElementById('aac-status').textContent='✓ installed v'+webgazerAAC.version;
     document.getElementById('aac-status').style.color='var(--green)';
-    document.getElementById('aac-recalib').textContent='✓ enabled';
+    document.getElementById('aac-recalib').textContent='disabled for validation';
     document.getElementById('aac-recalib').style.color='var(--green)';
     updateRegUI('polynomial');
     log('webgazer-aac installed — polynomial regression active.','ok');
@@ -1132,6 +1132,7 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
   try {
     webgazer.showVideoPreview(true).showPredictionPoints(true).applyKalmanFilter(true);
 
+    webgazer.params.faceMeshSolutionPath = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619';
     await webgazer
       .setRegression('ridge')
       .setTracker('TFFaceMesh')
@@ -1185,7 +1186,7 @@ document.getElementById('btn-start').addEventListener('click', async()=>{
 
         lastPredTime=now;
       })
-      .saveDataAcrossSessions(true)
+      .saveDataAcrossSessions(false)
       .begin();
 
     document.getElementById('wg-begun').textContent='✓ yes';

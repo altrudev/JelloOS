@@ -11,7 +11,7 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-  <script src="https://unpkg.com/webgazer@2.1.0/dist/webgazer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webgazer@3.5.3/dist/webgazer.js"></script>
 
   <script type="module">
     import React from 'https://esm.sh/react@18.3.1?dev';
@@ -496,6 +496,7 @@ const GazeProvider = ({ children }) => {
     }
     try {
       setRingLight(true);
+      webgazer.params.faceMeshSolutionPath = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619';
       await webgazer
         .setRegression('ridge')
         .setTracker('TFFaceMesh')
@@ -508,7 +509,7 @@ const GazeProvider = ({ children }) => {
           };
           setGazePoint({ ...gazeRef.current });
         })
-        .saveDataAcrossSessions(true)
+        .saveDataAcrossSessions(false)
         .begin();
       webgazer.showVideoPreview(true).showPredictionPoints(false).applyKalmanFilter(true);
       setEyeTracking(true);
