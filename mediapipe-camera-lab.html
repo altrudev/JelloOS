@@ -15,12 +15,23 @@
 <body>
   <h1>MediaPipe camera observation lab</h1>
   <p>Local camera inference only. Start requests camera permission. Stop releases the camera and model. Leaving or hiding this page also stops the session.</p>
-  <p>This observes image landmarks only. No screen gaze, calibration, dwell, selection, recording, or video upload.</p>
+  <p>This observes image landmarks only. No screen gaze, dwell, AAC selection, image recording, or video upload.</p>
   <p>Per-eye eyelid openness, iris fit residuals and feature resolution are measured in camera pixels and ratios. Engineering geometry gates are not calibrated probabilities or gaze accuracy. Independent eye confidence remains unavailable; valid landmark frames are still rejected with <code>missing-eye-quality</code>. Model scores and blink blendshapes are never substituted.</p>
   <button id="start" type="button">Start camera</button>
   <button id="stop" type="button" disabled>Stop</button>
   <p id="status" role="status">Idle — camera has not been requested.</p>
   <video id="preview" autoplay muted playsinline aria-label="Unmirrored local camera preview"></video>
+  <h2>Human-confirmed measurement validation</h2>
+  <p>Select an explicit target, ask the participant to look at it, then confirm fixation separately. Selecting or clicking a target never confirms fixation. Labels are operator reports, not verified ground truth.</p>
+  <p>Targets use normalized coordinates within the outlined target area. Keep the window and participant position fixed during capture. Only accepted per-frame numeric iris features and target labels are retained in memory (up to 3000 frames); Stop, hiding, or leaving clears them. Calibration and held-out labels are separate. No estimator is trained here and held-out gaze error is UNAVAILABLE.</p>
+  <div id="target-controls"></div>
+  <div id="target-area" style="position:relative;height:280px;border:2px solid #b4d4ef" aria-label="Fixation target area">
+    <span id="fixation-target" hidden style="position:absolute;transform:translate(-50%,-50%);font-size:32px;color:#ffdf70" aria-label="Selected fixation target">⊕</span>
+  </div>
+  <label>Dataset <select id="partition"><option value="calibration">Calibration</option><option value="held-out">Held-out</option></select></label>
+  <button id="confirm-fixation" type="button" disabled>Operator confirms fixation — begin capture</button>
+  <button id="end-fixation" type="button">End fixation capture</button>
+  <pre id="validation-report">Held-out error: UNAVAILABLE — no screen gaze estimator.</pre>
   <h2>Latest frame evidence</h2>
   <pre id="evidence">No frame observed.</pre>
   <script type="module" src="/labs/mediaPipeCameraLab.ts"></script>
