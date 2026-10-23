@@ -2,6 +2,8 @@
 import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/+esm';
 import { CameraLabSession, observeCameraFrame } from '../services/mediaPipeCameraObservation';
 
+import { MeasurementValidation, VALIDATION_TARGETS, type Partition } from '../services/measurementValidation';
+
 const start = document.querySelector<HTMLButtonElement>('#start')!;
 const stop = document.querySelector<HTMLButtonElement>('#stop')!;
 const video = document.querySelector<HTMLVideoElement>('#preview')!;
@@ -10,7 +12,43 @@ const evidence = document.querySelector<HTMLElement>('#evidence')!;
 let active: CameraLabSession | undefined;
 let animation = 0;
 
+let validation = new MeasurementValidation();
+const confirmFixation = document.querySelector<HTMLButtonElement>('#confirm-fixation')!;
+const partition = document.querySelector<HTMLSelectElement>('#partition')!;
+const marker = document.querySelector<HTMLElement>('#fixation-target')!;
+const validationReport = document.querySelector<HTMLElement>('#validation-report')!;
+const renderValidation = () => { validationReport.textContent = JSON.stringify(validation.report(), null, 2); };
+VALIDATION_TARGETS.forEach((target, index) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = `Target ${index + 1} (${target.x}, ${target.y})`;
+  button.addEventListener('click', () => {
+    if (!active) return;
+    validation.selectTarget(target);
+    marker.hidden = false;
+    marker.style.left = `${target.x * 100}%`;
+    marker.style.top = `${target.y * 100}%`;
+    confirmFixation.disabled = false;
+    renderValidation();
+  });
+  document.querySelector('#target-controls')!.append(button);
+});
+confirmFixation.addEventListener('click', () => {
+  if (!active) return;
+  validation.confirmFixation(partition.value as Partition);
+  renderValidation();
+});
+document.querySelector('#end-fixation')!.addEventListener('click', () => {
+  validation.endFixation(); renderValidation();
+});
+partition.addEventListener('change', () => { validation.endFixation(); renderValidation(); });
+window.addEventListener('resize', () => { validation.endFixation(); renderValidation(); });
+
 function finish(message = 'Stopped — camera released.'): void {
+  validation.stop();
+  marker.hidden = true;
+  confirmFixation.disabled = true;
+  renderValidation();
   cancelAnimationFrame(animation);
   active?.stop();
   active = undefined;
@@ -25,6 +63,8 @@ function finish(message = 'Stopped — camera released.'): void {
 // The sole entry point for requesting camera access is this explicit click.
 start.addEventListener('click', async () => {
   if (active) return;
+  validation = new MeasurementValidation();
+  renderValidation();
   const session = new CameraLabSession();
   active = session;
   start.disabled = true;
@@ -60,6 +100,8 @@ start.addEventListener('click', async () => {
         if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
           lastVideoTime = video.currentTime;
           const frame = observeCameraFrame(resources.detector, video, () => performance.now());
+          validation.capture(frame.measurements);
+          renderValidation();
           frames++;
           evidence.textContent = JSON.stringify({ frame: frames,
             timestampMs: frame.timestampMs,
